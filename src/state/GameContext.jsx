@@ -16,6 +16,7 @@ export const DEFAULT_DRAFT = {
   spray: 'glitter',
   sticker: null,
   scent: 'bubble-gum',
+  sodaFlavor: null, // when the scent is Soda
   casingType: 'gel',
   shape: 'dumpling',
   fill: 0,

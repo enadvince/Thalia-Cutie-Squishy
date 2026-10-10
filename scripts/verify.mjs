@@ -164,7 +164,15 @@ async function stepTwo(page, profile) {
   if (!(await page.getByRole('button', { name: 'Step 2: Casing' }).getAttribute('aria-current'))) fail('system back left Step 2')
 
   await page.getByRole('tab', { name: 'Scent' }).click()
-  await panel.getByRole('button', { name: 'Cola' }).click()
+  // Soda opens a flavor sheet; picking a flavor renames the card.
+  await panel.getByRole('button', { name: /Soda/ }).click()
+  await dialog.waitFor()
+  if ((await dialog.getByRole('button').count()) < 8) fail('expected 7 soda flavors in the sheet')
+  await dialog.getByRole('button', { name: 'Grape Soda' }).click()
+  await check(page, profile, 'step2-soda')
+  await dialog.getByRole('button', { name: 'Done' }).click()
+  await dialog.waitFor({ state: 'detached' })
+  if (!(await panel.getByRole('button', { name: 'Grape Soda' }).isVisible())) fail('the soda card did not show the picked flavor')
   await check(page, profile, 'step2-scent')
   await page.getByRole('tab', { name: 'Type' }).click()
   await panel.getByRole('button', { name: 'Plastic' }).click()

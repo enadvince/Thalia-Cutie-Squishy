@@ -98,6 +98,14 @@ export class SoftBody {
     }
   }
 
+  // How far apart two fingers are now compared with when they touched down (1 = same).
+  spread() {
+    const [a, b] = [...this.grabs.values()]
+    if (!a || !b) return 1
+    const start = Math.hypot(a.x0 - b.x0, a.y0 - b.y0) || 0.01
+    return Math.hypot(a.x - b.x, a.y - b.y) / start
+  }
+
   // A quick tap: a dimple where the finger landed plus a little whole-body squash-bounce.
   tap(x, y) {
     this.poke(x, y, 18)
@@ -126,10 +134,17 @@ export class SoftBody {
     let sum = 0
     let weight = 0
     if (grabs.length >= 2) {
-      // Pinch: squeeze toward the middle of the first two fingers.
-      const mid = ((axis ? grabs[0].y : grabs[0].x) + (axis ? grabs[1].y : grabs[1].x)) / 2
-      for (const g of grabs.slice(0, 2)) {
-        sum += g.w[v] * (restV + (mid - restV) * 0.45)
+      // Two fingers: each pulls its own side along (apart = stretch, together = squeeze).
+      // Fingers that haven't moved yet gently pinch toward the middle.
+      const two = grabs.slice(0, 2)
+      const mid = ((axis ? two[0].y : two[0].x) + (axis ? two[1].y : two[1].x)) / 2
+      for (const g of two) {
+        let goal
+        if (g.moved) {
+          const d = (axis ? g.y - g.y0 : g.x - g.x0) * 1.1
+          goal = restV + Math.max(-stretch * 1.3, Math.min(stretch * 1.3, d))
+        } else goal = restV + (mid - restV) * 0.3
+        sum += g.w[v] * goal
         weight += g.w[v]
       }
     } else {

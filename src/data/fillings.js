@@ -15,7 +15,7 @@ export const FILLINGS = [
     id: 'crunchy', name: 'Crunchy', icon: 'crunch', pitch: 1.35,
     texture: { gloss: 0.2, pattern: 'flakes' },
     physics: { k: 80, damping: 13, stretch: 0.16, press: 0.34, plasticity: 0.15 },
-    sounds: { press: 'crackle', stretch: 'crackle', release: 'crackle' },
+    sounds: { press: 'crunch', stretch: 'crunch', release: 'crunch' },
   },
   {
     id: 'slow-rising', name: 'Slow Rising', icon: 'rise', pitch: 0.7,

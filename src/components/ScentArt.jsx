@@ -23,11 +23,12 @@ const ART = {
       <circle cx="0" cy="4" r="0.6" fill="#fff8d6" />
     </>
   ),
-  fizz: (
+  fizz: ({ color = '#8a4b2a' }) => (
     <>
-      <circle cx="-3" cy="2" r="3.5" fill="#fff" fillOpacity="0.4" stroke="#8a4b2a" strokeWidth="1" />
-      <circle cx="3" cy="-3" r="2.5" fill="#fff" fillOpacity="0.4" stroke="#8a4b2a" strokeWidth="1" />
-      <circle cx="4" cy="4" r="1.6" fill="#fff" fillOpacity="0.4" stroke="#8a4b2a" strokeWidth="0.8" />
+      <circle cx="-3" cy="2" r="3.6" fill={color} fillOpacity="0.35" stroke={color} strokeWidth="1" />
+      <circle cx="3" cy="-3" r="2.6" fill={color} fillOpacity="0.3" stroke={color} strokeWidth="1" />
+      <circle cx="4" cy="4" r="1.6" fill={color} fillOpacity="0.35" stroke={color} strokeWidth="0.8" />
+      <circle cx="-4" cy="0.5" r="1" fill="#fff" />
     </>
   ),
   blueberry: (
@@ -61,16 +62,9 @@ const ART = {
       <circle cx="4" cy="-6" r="1.6" fill="#ff5a7a" />
     </>
   ),
-  orangeFizz: (
-    <>
-      <circle cx="-3" cy="2" r="3.6" fill="#ffb37a" fillOpacity="0.55" stroke="#f37114" strokeWidth="1" />
-      <circle cx="3" cy="-3" r="2.6" fill="#ffd8b0" fillOpacity="0.6" stroke="#f37114" strokeWidth="1" />
-      <circle cx="4" cy="4" r="1.6" fill="#ffb37a" fillOpacity="0.6" stroke="#f37114" strokeWidth="0.8" />
-      <circle cx="-4" cy="0.5" r="1" fill="#fff" />
-    </>
-  ),
 }
 
-export default function ScentArt({ particle }) {
-  return ART[particle]
+export default function ScentArt({ particle, color }) {
+  const art = ART[particle]
+  return typeof art === 'function' ? art({ color }) : art
 }

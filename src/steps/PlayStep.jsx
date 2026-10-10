@@ -8,7 +8,7 @@ import { makeChips, hitChips, shakeChips, updateChips, chipQuads } from '../lib/
 import { casingTypeById, playPhysics } from '../data/casings'
 import { createRenderer } from '../lib/glMesh'
 import { svgToImage } from '../lib/snapshot'
-import { playNamed, jingle, sparkle, crackle, click } from '../lib/audio'
+import { playNamed, jingle, sparkle, crackle, click, rubber } from '../lib/audio'
 import { speak } from '../lib/speech'
 import { tick } from '../lib/haptics'
 import { bouncy } from '../lib/motion'
@@ -23,7 +23,7 @@ import Sheet from '../components/Sheet'
 import Icon from '../components/Icon'
 
 const GRID = 24 // soft-body grid resolution
-const REPEATING = new Set(['crackle', 'click']) // sounds that repeat while dragging
+const REPEATING = new Set(['crackle', 'crunch', 'click']) // sounds that repeat while dragging
 const TEXTURE_SIZE = 1024
 
 const PlayContext = createContext(null)
@@ -151,6 +151,7 @@ export function PlayStage({ draft }) {
   const [mode, setMode] = useState('loading') // 'loading' | 'gl' | 'fallback'
   const [pressed, setPressed] = useState(false) // fallback squash
   const fingers = useRef(new Map())
+  const twoFinger = useRef({ spread: 1, last: 0, count: 0 }) // sound pacing for two-finger stretches
   const fill = Math.max(draft.fill, 1) // Step 4 always plays with a full squishy
   const { name, savedId, ...look } = draft // renaming/saving doesn't change the picture
   const lookKey = JSON.stringify(look)
@@ -272,6 +273,7 @@ export function PlayStage({ draft }) {
     e.currentTarget.setPointerCapture(e.pointerId)
     const [x, y] = point(e)
     body.grab(e.pointerId, x, y)
+    if (body.grabs.size === 2) twoFinger.current = { spread: 1, last: 0, count: 0 }
     wax.current?.hit(x, y)
     fingers.current.set(e.pointerId, { stretched: false, lastSound: 0 })
     setPressed(true)
@@ -285,6 +287,17 @@ export function PlayStage({ draft }) {
     body.move(e.pointerId, x, y)
     const g = body.grabs.get(e.pointerId)
     const now = performance.now()
+    if (body.grabs.size >= 2) {
+      // Two-finger stretch/squeeze: a rubbery tone that follows the pull, plus the texture's sound.
+      const spread = body.spread()
+      if (now - twoFinger.current.last > 110 && Math.abs(spread - twoFinger.current.spread) > 0.03) {
+        rubber(Math.min(1, Math.abs(spread - 1) * 1.5), spread > twoFinger.current.spread)
+        if (twoFinger.current.count++ % 3 === 0) sound('stretch', Math.min(1, Math.abs(spread - 1) * 2))
+        twoFinger.current.spread = spread
+        twoFinger.current.last = now
+      }
+      return
+    }
     // Crunchy and Clicker keep crackling/clicking as you move; other fillings make one stretch sound.
     if (g?.moved && (!f.stretched || (REPEATING.has(filling.sounds.stretch) && now - f.lastSound > 160))) {
       f.stretched = true

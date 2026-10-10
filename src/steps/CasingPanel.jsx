@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { SPRAYS } from '../data/sprays'
-import { SCENTS } from '../data/scents'
+import { SCENTS, SODA_FLAVORS, sodaFlavorById } from '../data/scents'
 import { CASING_TYPES } from '../data/casings'
 import { SHAPES } from '../data/shapes'
 import { STICKERS, FIRST_STARTER, isStickerUnlocked, stickerById, stickerSrc } from '../data/stickers'
@@ -26,6 +26,8 @@ export default function CasingPanel({ section, onSection }) {
   const { draft } = state.maker
   const choose = useChoose()
   const [stickersOpen, setStickersOpen] = useState(false)
+  const [sodaOpen, setSodaOpen] = useState(false)
+  const flavor = sodaFlavorById(draft.sodaFlavor)
   const color = casingColor(draft)
   const sticker = stickerById(draft.sticker) ?? FIRST_STARTER
 
@@ -69,14 +71,26 @@ export default function CasingPanel({ section, onSection }) {
 
       {section === 'scent' && (
         <OptionGrid>
-          {SCENTS.map((s) => (
-            <OptionCard key={s.id} label={s.name} selected={draft.scent === s.id} onClick={() => choose({ scent: s.id }, s.name, 1.3)}>
-              <svg viewBox="-12 -12 24 24" className="size-full" aria-hidden="true">
-                <circle r="11" fill={s.tint} opacity="0.18" />
-                <ScentArt particle={s.particle} />
-              </svg>
-            </OptionCard>
-          ))}
+          {SCENTS.map((s) =>
+            s.flavors ? (
+              // Soda: opens the flavor sheet (like Sticker Spray).
+              <OptionCard
+                key={s.id}
+                label={draft.scent === 'soda' ? flavor.name : s.name}
+                selected={draft.scent === s.id}
+                onClick={() => {
+                  if (draft.scent !== 'soda') choose({ scent: 'soda', sodaFlavor: flavor.id }, flavor.name, 1.3)
+                  setSodaOpen(true)
+                }}
+              >
+                <ScentThumb particle="fizz" tint={flavor.tint} color={flavor.tint} />
+              </OptionCard>
+            ) : (
+              <OptionCard key={s.id} label={s.name} selected={draft.scent === s.id} onClick={() => choose({ scent: s.id }, s.name, 1.3)}>
+                <ScentThumb particle={s.particle} tint={s.tint} />
+              </OptionCard>
+            ),
+          )}
         </OptionGrid>
       )}
 
@@ -104,12 +118,38 @@ export default function CasingPanel({ section, onSection }) {
         </OptionGrid>
       )}
 
+      {sodaOpen && (
+        <Sheet title="Pick a soda flavor!" onClose={() => setSodaOpen(false)}>
+          <OptionGrid>
+            {SODA_FLAVORS.map((f) => (
+              <OptionCard
+                key={f.id}
+                label={f.name}
+                selected={draft.scent === 'soda' && flavor.id === f.id}
+                onClick={() => choose({ scent: 'soda', sodaFlavor: f.id }, f.name, 1.3)}
+              >
+                <ScentThumb particle="fizz" tint={f.tint} color={f.tint} />
+              </OptionCard>
+            ))}
+          </OptionGrid>
+        </Sheet>
+      )}
+
       {stickersOpen && (
         <Sheet title="Pick a sticker!" onClose={() => setStickersOpen(false)}>
           <StickerGrid selected={sticker.id} onPick={(s) => choose({ spray: 'sticker', sticker: s.id }, s.name, 1.4)} />
         </Sheet>
       )}
     </div>
+  )
+}
+
+function ScentThumb({ particle, tint, color }) {
+  return (
+    <svg viewBox="-12 -12 24 24" className="size-full" aria-hidden="true">
+      <circle r="11" fill={tint} opacity="0.18" />
+      <ScentArt particle={particle} color={color} />
+    </svg>
   )
 }
 
@@ -146,9 +186,7 @@ function StickerGrid({ selected, onPick }) {
             <img src={stickerSrc(s)} alt="" className="size-16" />
           </OptionCard>
         ) : (
-          <LockedCard key={s.id} name={s.name} stars={s.unlock.stars}>
-            <img src={stickerSrc(s)} alt="" className="size-16" />
-          </LockedCard>
+          <LockedCard key={s.id} name={s.name} stars={s.unlock.stars} />
         ),
       )}
     </OptionGrid>

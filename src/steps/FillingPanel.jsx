@@ -108,9 +108,7 @@ export default function FillingPanel({ section, onSection }) {
                   <AddonThumb art={a.art} />
                 </OptionCard>
               ) : (
-                <LockedCard key={a.id} name={a.name} stars={a.unlock.stars}>
-                  <AddonThumb art={a.art} />
-                </LockedCard>
+                <LockedCard key={a.id} name={a.name} stars={a.unlock.stars} />
               ),
             )}
           </Grid>

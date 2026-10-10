@@ -3,7 +3,7 @@ import { motion, useReducedMotion } from 'framer-motion'
 import { shapeById } from '../data/shapes'
 import { casingTypeById } from '../data/casings'
 import { sprayById } from '../data/sprays'
-import { scentById, SCENT_TINT_AMOUNT } from '../data/scents'
+import { scentLook, SCENT_TINT_AMOUNT } from '../data/scents'
 import { stickerById, stickerSrc, FIRST_STARTER } from '../data/stickers'
 import { colorById } from '../data/colors'
 import { mix } from '../lib/color'
@@ -17,7 +17,7 @@ const INK = '#3b2a4a'
 // Casing color: a light version of her first filling color, with the scent's tint blended in.
 export function casingColor(draft) {
   const base = mix(colorById(draft.fillingColors[0]).hex, '#ffffff', 0.55)
-  return mix(base, scentById(draft.scent).tint, SCENT_TINT_AMOUNT)
+  return mix(base, scentLook(draft).tint, SCENT_TINT_AMOUNT)
 }
 
 // Draws a shape's parts (circles, ellipses, rects, paths) with the given props.
@@ -210,7 +210,7 @@ export default function SquishyView({ draft, fill, jiggle = 0, burst = 0, still 
   const shape = shapeById(draft.shape)
   const type = casingTypeById(draft.casingType)
   const spray = sprayById(draft.spray)
-  const scent = scentById(draft.scent)
+  const scent = scentLook(draft)
   const color = casingColor(draft)
   const sticker = stickerById(draft.sticker) ?? FIRST_STARTER
   const showInner = layer === 'all' || layer === 'inner'
@@ -384,7 +384,7 @@ export default function SquishyView({ draft, fill, jiggle = 0, burst = 0, still 
           <g key={`${scent.id}-${i}`} transform={`translate(${x} ${y})`}>
             <g className="scent-rise" style={{ animationDelay: `${i * 0.7}s` }}>
               <g transform="scale(1.3)">
-                <ScentArt particle={scent.particle} />
+                <ScentArt particle={scent.particle} color={scent.color} />
               </g>
             </g>
           </g>

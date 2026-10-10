@@ -19,7 +19,7 @@ function spiralPath(cx, cy, offset) {
 const BIG_ART = new Set(['cloudPuppy', 'bowKitty', 'bunnyImp', 'pinkLamb', 'sunnyPup', 'pompom'])
 
 // How many add-on pieces float in a squishy in total, however many add-ons she picks.
-export const MAX_PIECES = 36
+export const MAX_PIECES = 54
 const VARIATION = 0.05 // each add-on's share wobbles by up to ±5 percentage points
 
 // Splits 100% between the picked add-ons: an equal share each ± 5%, and the last one gets
@@ -133,9 +133,10 @@ export default function FillingMass({ draft, box, top, center, scatterTop = top 
           <rect x="1" y="1" width="1.4" height="1.4" fill="#fff" opacity="0.7" />
           <rect x="4" y="3.5" width="1.2" height="1.2" fill="#fff" opacity="0.55" />
         </pattern>
-        <pattern id={`${uid}-wax`} width="80" height="30" patternUnits="userSpaceOnUse">
-          <rect width="80" height="30" fill="#fff" opacity="0.12" />
-          <path d="M0 18q20 -6 40 0t40 0" fill="none" stroke="#fff" strokeWidth="6" opacity="0.18" />
+        <pattern id={`${uid}-wax`} width="44" height="44" patternUnits="userSpaceOnUse">
+          {/* solid candle wax: soft marbling inside, no surface haze */}
+          <path d="M-4 30q12 -14 26 -4t26 -2" fill="none" stroke="#3b2a4a" strokeWidth="1.2" opacity="0.07" />
+          <path d="M6 10q10 6 20 0t22 2" fill="none" stroke="#fff" strokeWidth="1.5" opacity="0.18" />
         </pattern>
         <pattern id={`${uid}-folds`} width="50" height="40" patternUnits="userSpaceOnUse">
           <path d="M5 30q20 -26 40 0" fill="none" stroke="#fff" strokeWidth="2.5" opacity="0.35" />
