@@ -7,3 +7,7 @@ export function seeded(str) {
     return ((h >>>= 0) % 10000) / 10000
   }
 }
+
+// React's useId() can contain characters that aren't valid in SVG ids (and break url(#id)
+// when an SVG is turned into an image). Keep letters, digits, - and _.
+export const safeId = (id) => `u${id.replace(/[^a-zA-Z0-9_-]/g, '')}`

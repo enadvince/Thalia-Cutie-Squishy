@@ -7,7 +7,7 @@ import { scentById, SCENT_TINT_AMOUNT } from '../data/scents'
 import { stickerById, stickerSrc, FIRST_STARTER } from '../data/stickers'
 import { colorById } from '../data/colors'
 import { mix } from '../lib/color'
-import { seeded } from '../lib/random'
+import { seeded, safeId } from '../lib/random'
 import SprayArt from './SprayArt'
 import ScentArt from './ScentArt'
 import FillingMass from './FillingMass'
@@ -94,10 +94,10 @@ function ShapeDecor({ decor, color }) {
 }
 
 // Area the filling occupies inside any shape (the shape's clip trims it).
-const FILL_BOX = { x: 20, y: 22, w: 220, h: 228 }
+export const FILL_BOX = { x: 20, y: 22, w: 220, h: 228 }
 
 // How the casing looks at a fill level: squashed when empty, round when full, a little bulgy when overfilled.
-function inflation(fill) {
+export function inflation(fill) {
   const f = Math.min(fill, 1)
   const extra = Math.max(0, fill - 1) * 0.3
   return { scaleX: 0.86 + 0.14 * f + extra, scaleY: 0.72 + 0.28 * f + extra }
@@ -106,14 +106,19 @@ function inflation(fill) {
 // The squishy: shape + casing type + spray + scent.
 // `fill` (Step 3 onward) pours the filling in and inflates the casing; `jiggle` and `burst`
 // are counters that play a happy jiggle / sparkle burst each time they go up.
-export default function SquishyView({ draft, fill, jiggle = 0, burst = 0 }) {
-  const uid = useId().replace(/:/g, '')
+// For Step 4's soft-body canvas, `still` renders without animation and `layer` picks one part:
+//   'all' (default) · 'inner' (filling, no add-ons) · 'casing' (everything over the filling) · 'scent'
+export default function SquishyView({ draft, fill, jiggle = 0, burst = 0, still = false, layer = 'all' }) {
+  const uid = safeId(useId())
   const shape = shapeById(draft.shape)
   const type = casingTypeById(draft.casingType)
   const spray = sprayById(draft.spray)
   const scent = scentById(draft.scent)
   const color = casingColor(draft)
   const sticker = stickerById(draft.sticker) ?? FIRST_STARTER
+  const showInner = layer === 'all' || layer === 'inner'
+  const showCasing = layer === 'all' || layer === 'casing'
+  const showScent = layer === 'all' || layer === 'scent'
 
   // A happy wobble on every change.
   const changeKey = JSON.stringify(draft)
@@ -134,9 +139,11 @@ export default function SquishyView({ draft, fill, jiggle = 0, burst = 0 }) {
   const clip = `url(#${uid}-shape)`
   const filled = fill !== undefined
   const shape3 = filled ? inflation(fill) : { scaleX: 1, scaleY: 1 }
+  const origin = { transformBox: 'view-box', transformOrigin: '130px 236px' }
 
   return (
     <svg
+      xmlns="http://www.w3.org/2000/svg"
       viewBox="-10 -20 280 280"
       className="size-full overflow-visible"
       role="img"
@@ -168,95 +175,110 @@ export default function SquishyView({ draft, fill, jiggle = 0, burst = 0 }) {
       </defs>
 
       {/* floor shadow */}
-      <ellipse cx="130" cy="240" rx="88" ry="10" fill="#a3245f" opacity="0.12" />
+      {layer === 'all' && <ellipse cx="130" cy="240" rx="88" ry="10" fill="#a3245f" opacity="0.12" />}
 
-      <motion.g
-        animate={shape3}
-        transition={{ type: 'spring', stiffness: 220, damping: 14 }}
-        style={{ transformBox: 'view-box', transformOrigin: '130px 236px' }}
-      >
-      <motion.g
-        key={`jiggle-${jiggle}`}
-        initial={false}
-        animate={jiggle ? { scaleX: [1, 1.1, 0.94, 1.05, 1], scaleY: [1, 0.9, 1.06, 0.97, 1] } : {}}
-        transition={{ duration: 0.6 }}
-        style={{ transformBox: 'view-box', transformOrigin: '130px 236px' }}
-      >
-      <motion.g
-        key={bounce}
-        initial={{ scaleX: 1.06, scaleY: 0.94 }}
-        animate={{ scaleX: 1, scaleY: 1 }}
-        transition={{ type: 'spring', stiffness: 300, damping: 7 }}
-        style={{ transformBox: 'view-box', transformOrigin: '130px 236px' }}
-      >
-        <g filter={`url(#${uid}-outline)`}>
-          <ShapeParts parts={shape.parts} fill="#000" />
-        </g>
-        {shape.decor === 'tentacles' && <ShapeDecor decor="tentacles" color={color} />}
-        {shape.decor === 'gills' && <ShapeDecor decor="gills" />}
+      {(showInner || showCasing) && (
+        <motion.g initial={false} animate={shape3} transition={{ type: 'spring', stiffness: 220, damping: 14 }} style={origin}>
+          <motion.g
+            key={`jiggle-${jiggle}`}
+            initial={false}
+            animate={jiggle ? { scaleX: [1, 1.1, 0.94, 1.05, 1], scaleY: [1, 0.9, 1.06, 0.97, 1] } : {}}
+            transition={{ duration: 0.6 }}
+            style={origin}
+          >
+            <motion.g
+              key={bounce}
+              initial={still ? false : { scaleX: 1.06, scaleY: 0.94 }}
+              animate={{ scaleX: 1, scaleY: 1 }}
+              transition={{ type: 'spring', stiffness: 300, damping: 7 }}
+              style={origin}
+            >
+              {showCasing && (
+                <>
+                  <g filter={`url(#${uid}-outline)`}>
+                    <ShapeParts parts={shape.parts} fill="#000" />
+                  </g>
+                  {shape.decor === 'tentacles' && <ShapeDecor decor="tentacles" color={color} />}
+                  {shape.decor === 'gills' && <ShapeDecor decor="gills" />}
+                </>
+              )}
 
-        <g clipPath={clip}>
-          {/* the casing itself: how see-through depends on the casing type */}
-          <rect x="-10" y="-20" width="280" height="280" fill="#fff" opacity="0.35" />
-          {filled && (
-            <FillingMass
-              draft={draft}
-              box={FILL_BOX}
-              top={FILL_BOX.y + FILL_BOX.h * (1 - Math.min(fill, 1))}
-              center={[130, 140]}
-              scatterTop={FILL_BOX.y + 24}
-            />
-          )}
-          {/* once filled, the casing reads a little clearer so the filling shows through */}
-          <rect x="-10" y="-20" width="280" height="280" fill={color} opacity={filled ? type.opacity * 0.75 : type.opacity} />
+              <g clipPath={clip}>
+                {showInner && (
+                  <>
+                    <rect x="-10" y="-20" width="280" height="280" fill="#fff" opacity="0.35" />
+                    {filled && (
+                      <FillingMass
+                        draft={draft}
+                        box={FILL_BOX}
+                        top={FILL_BOX.y + FILL_BOX.h * (1 - Math.min(fill, 1))}
+                        center={[130, 140]}
+                        scatterTop={FILL_BOX.y + 24}
+                        showAddons={layer === 'all'}
+                      />
+                    )}
+                  </>
+                )}
+                {showCasing && (
+                  <>
+                    {/* the casing itself: how see-through depends on the casing type;
+                        once filled, it reads a little clearer so the filling shows through */}
+                    <rect x="-10" y="-20" width="280" height="280" fill={color} opacity={filled ? type.opacity * 0.75 : type.opacity} />
 
-          {/* spray */}
-          {speckles.map((p) =>
-            spray.id === 'sticker' ? (
-              <image
-                key={p.i}
-                href={stickerSrc(sticker)}
-                x={p.x - 22}
-                y={p.y - 22}
-                width="44"
-                height="44"
-                transform={`rotate(${(p.rot % 40) - 20} ${p.x} ${p.y})`}
-              />
-            ) : (
-              <g key={p.i} transform={`translate(${p.x.toFixed(1)} ${p.y.toFixed(1)}) rotate(${p.rot.toFixed(0)}) scale(${p.scale.toFixed(2)})`}>
-                <SprayArt art={spray.art} index={p.i} />
+                    {/* spray */}
+                    {speckles.map((p) =>
+                      spray.id === 'sticker' ? (
+                        <image
+                          key={p.i}
+                          href={stickerSrc(sticker)}
+                          x={p.x - 22}
+                          y={p.y - 22}
+                          width="44"
+                          height="44"
+                          transform={`rotate(${(p.rot % 40) - 20} ${p.x} ${p.y})`}
+                        />
+                      ) : (
+                        <g key={p.i} transform={`translate(${p.x.toFixed(1)} ${p.y.toFixed(1)}) rotate(${p.rot.toFixed(0)}) scale(${p.scale.toFixed(2)})`}>
+                          <SprayArt art={spray.art} index={p.i} />
+                        </g>
+                      ),
+                    )}
+
+                    <rect x="-10" y="-20" width="280" height="280" fill={`url(#${uid}-depth)`} />
+                    {/* gloss highlights: plastic is shiniest, balloon is softer */}
+                    <ellipse cx="88" cy="74" rx="38" ry="15" fill="#fff" opacity={type.gloss * 0.7} transform="rotate(-28 88 74)" />
+                    <circle cx="128" cy="58" r="6" fill="#fff" opacity={type.gloss * 0.8} />
+                  </>
+                )}
               </g>
-            ),
-          )}
 
-          <rect x="-10" y="-20" width="280" height="280" fill={`url(#${uid}-depth)`} />
-          {/* gloss highlights: plastic is shiniest, balloon is softer */}
-          <ellipse cx="88" cy="74" rx="38" ry="15" fill="#fff" opacity={type.gloss * 0.7} transform="rotate(-28 88 74)" />
-          <circle cx="128" cy="58" r="6" fill="#fff" opacity={type.gloss * 0.8} />
-        </g>
+              {showCasing && (
+                <>
+                  <g filter={`url(#${uid}-rim)`}>
+                    <ShapeParts parts={shape.parts} fill="#000" />
+                  </g>
+                  {!['tentacles', 'gills'].includes(shape.decor) && <ShapeDecor decor={shape.decor} />}
+                  {shape.face && <Face face={shape.face} />}
+                </>
+              )}
+            </motion.g>
+          </motion.g>
+        </motion.g>
+      )}
 
-        <g filter={`url(#${uid}-rim)`}>
-          <ShapeParts parts={shape.parts} fill="#000" />
-        </g>
-
-        {!['tentacles', 'gills'].includes(shape.decor) && <ShapeDecor decor={shape.decor} />}
-        {shape.face && <Face face={shape.face} />}
-      </motion.g>
-      </motion.g>
-      </motion.g>
-
-      {burst > 0 && <SparkleBurst key={burst} />}
+      {burst > 0 && !still && <SparkleBurst key={burst} />}
 
       {/* scent bubbles drifting up */}
-      {[[18, 200], [236, 180], [30, 90], [226, 70], [8, 150], [246, 130]].map(([x, y], i) => (
-        <g key={`${scent.id}-${i}`} transform={`translate(${x} ${y})`}>
-          <g className="scent-rise" style={{ animationDelay: `${i * 0.7}s` }}>
-            <g transform="scale(1.3)">
-              <ScentArt particle={scent.particle} />
+      {showScent &&
+        [[18, 200], [236, 180], [30, 90], [226, 70], [8, 150], [246, 130]].map(([x, y], i) => (
+          <g key={`${scent.id}-${i}`} transform={`translate(${x} ${y})`}>
+            <g className="scent-rise" style={{ animationDelay: `${i * 0.7}s` }}>
+              <g transform="scale(1.3)">
+                <ScentArt particle={scent.particle} />
+              </g>
             </g>
           </g>
-        </g>
-      ))}
+        ))}
     </svg>
   )
 }

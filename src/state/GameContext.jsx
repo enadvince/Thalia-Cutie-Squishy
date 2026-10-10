@@ -17,12 +17,16 @@ export const DEFAULT_DRAFT = {
   casingType: 'gel',
   shape: 'dumpling',
   fill: 0,
+  name: null, // null = an automatic name (see squishyName)
+  savedId: null, // set once it's on the Shelf
 }
 
 const initialState = {
   settings: { mode: 'little', muted: false, readAloud: MODES.little.readAloudDefault },
   // `draft` is the squishy being made; `past` holds earlier drafts for Undo.
   maker: { step: 0, furthest: 0, draft: DEFAULT_DRAFT, past: [] },
+  // Saved squishies: [{ id, name, draft, savedAt }]
+  shelf: [],
 }
 
 // Testing only, until the parent gate (Phase 7) can switch modes: ?mode=big or ?mode=little.
@@ -39,6 +43,7 @@ function load() {
       return withModeOverride({
         settings: { ...initialState.settings, ...saved.settings },
         maker: { ...initialState.maker, ...saved.maker, draft: { ...DEFAULT_DRAFT, ...saved.maker?.draft } },
+        shelf: saved.shelf ?? [],
       })
     }
   } catch {
@@ -66,6 +71,20 @@ function reducer(state, action) {
         ...state,
         maker: { ...maker, draft: maker.past.at(-1), past: maker.past.slice(0, -1) },
       }
+    case 'saveSquishy': {
+      // Saving again updates the same Shelf spot. Not an Undo step.
+      const id = maker.draft.savedId ?? `sq-${Date.now()}`
+      const draft = { ...maker.draft, savedId: id }
+      const entry = { id, name: action.name, draft, savedAt: Date.now() }
+      const exists = state.shelf.some((s) => s.id === id)
+      return {
+        ...state,
+        maker: { ...maker, draft },
+        shelf: exists ? state.shelf.map((s) => (s.id === id ? entry : s)) : [...state.shelf, entry],
+      }
+    }
+    case 'newSquishy':
+      return { ...state, maker: { step: 0, furthest: 0, draft: DEFAULT_DRAFT, past: [] } }
     case 'setSetting':
       return { ...state, settings: { ...state.settings, [action.key]: action.value } }
     default:
