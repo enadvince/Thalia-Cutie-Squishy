@@ -63,8 +63,12 @@ for (const profile of PROFILES.filter((p) => !ONLY || ONLY.includes(p.name))) {
   const context = await browser.newContext({ ...profile.device, reducedMotion: profile.reducedMotion ?? 'no-preference' })
   const page = await context.newPage()
   page.on('pageerror', (e) => problems.push(`[${profile.name}] page error: ${e.message}`))
-  await page.goto(`${BASE}/?platform=${profile.platform}${profile.mode ? `&mode=${profile.mode}` : ''}`)
-  await page.evaluate(() => localStorage.clear())
+  await page.goto(`${BASE}/?platform=${profile.platform}`)
+  // Start fresh; Big Maker profiles start with the mode a grown-up would pick in Settings.
+  await page.evaluate((mode) => {
+    localStorage.clear()
+    if (mode) localStorage.setItem('thalia-squishies:v1', JSON.stringify({ settings: { mode, readAloud: false } }))
+  }, profile.mode)
   await page.reload()
   if (profile.textScale) {
     // Simulates Dynamic Type / Android font scale at 200%.
@@ -87,6 +91,9 @@ for (const profile of PROFILES.filter((p) => !ONLY || ONLY.includes(p.name))) {
   await makeAnother(page, profile)
   await shelfFlow(page, profile)
   await surpriseFlow(page, profile)
+  await napFlow(page, profile)
+  await grownUpFlow(page, profile)
+  if (profile.name === 'iphone-portrait') await offlineFlow(page, profile, context)
   await context.close()
 }
 
@@ -412,4 +419,138 @@ async function surpriseFlow(page, profile) {
   const draft = await page.evaluate(() => JSON.parse(localStorage.getItem('thalia-squishies:v1')).maker.draft)
   if (draft.fill !== 1 || !draft.name || draft.savedId) fail('the surprise squishy is not a fresh, filled squishy')
   await check(page, profile, 'surprise')
+}
+
+// Parent gate helpers: hold for 3 seconds, then read the problem in words and answer it.
+function wordsToNumber(text) {
+  const ones = ['zero', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine', 'ten', 'eleven', 'twelve',
+    'thirteen', 'fourteen', 'fifteen', 'sixteen', 'seventeen', 'eighteen', 'nineteen']
+  const tens = ['', '', 'twenty', 'thirty', 'forty', 'fifty', 'sixty', 'seventy', 'eighty', 'ninety']
+  return text.split('-').reduce((sum, w) => sum + (ones.includes(w) ? ones.indexOf(w) : tens.indexOf(w) * 10), 0)
+}
+
+async function holdGate(page, ms = 3300) {
+  const hold = page.getByRole('button', { name: 'Hold for 3 seconds' })
+  await hold.scrollIntoViewIfNeeded()
+  const box = await hold.boundingBox()
+  await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2)
+  await page.mouse.down()
+  await page.waitForTimeout(ms)
+  await page.mouse.up()
+}
+
+async function passGate(page, { wrongFirst = false, fail } = {}) {
+  const gate = page.getByRole('dialog', { name: 'For grown-ups' })
+  await gate.waitFor()
+  // Letting go early must not open it.
+  const hold = page.getByRole('button', { name: 'Hold for 3 seconds' })
+  await holdGate(page, 800)
+  if (await gate.getByRole('textbox').count()) fail?.('a short hold opened the math question')
+  await holdGate(page)
+  const read = async () => {
+    const q = await gate.locator('label').first().textContent()
+    const [, a, b] = q.match(/What is ([a-z-]+) times ([a-z-]+)\?/)
+    return { q, answer: wordsToNumber(a) * wordsToNumber(b) }
+  }
+  if (wrongFirst) {
+    const first = await read()
+    await gate.getByRole('textbox').fill(String(first.answer + 1))
+    await gate.getByRole('button', { name: 'Check' }).click()
+    if (!(await hold.isVisible())) fail?.('a wrong answer did not start over with the hold')
+    await holdGate(page)
+    if ((await read()).q === first.q) fail?.('a wrong answer did not give a new problem')
+  }
+  const { answer } = await read()
+  await gate.getByRole('textbox').fill(String(answer))
+  await gate.getByRole('button', { name: 'Check' }).click()
+  await gate.waitFor({ state: 'detached' })
+}
+
+async function goTitle(page) {
+  const grownUps = page.getByRole('button', { name: 'Grown-ups', exact: true })
+  for (let i = 0; i < 20 && !(await grownUps.isVisible()); i++) await page.goBack()
+  return grownUps
+}
+
+// Grown-ups: the parent gate in front of Settings; mode, playtime, volume, reset all data.
+async function grownUpFlow(page, profile) {
+  const fail = (msg) => problems.push(`[${profile.name} / grown-ups] ${msg}`)
+  const saved = () => page.evaluate(() => JSON.parse(localStorage.getItem('thalia-squishies:v1')))
+  const grownUps = await goTitle(page)
+  await grownUps.click()
+  await page.getByRole('dialog', { name: 'For grown-ups' }).waitFor()
+  await check(page, profile, 'parent-gate')
+  await page.getByRole('button', { name: 'Cancel' }).click()
+  if (await page.getByRole('dialog', { name: 'For grown-ups' }).count()) fail('Cancel did not close the gate')
+
+  await grownUps.click()
+  await passGate(page, { wrongFirst: true, fail })
+  const settings = page.getByRole('radiogroup', { name: 'Maker mode' })
+  if (!(await settings.isVisible())) fail('passing the gate did not open Settings')
+  await check(page, profile, 'settings')
+
+  const other = profile.mode === 'big' ? 'Little Maker' : 'Big Maker'
+  await settings.getByRole('radio', { name: new RegExp(other) }).click()
+  if ((await saved()).settings.mode === (profile.mode ?? 'little')) fail('switching the maker mode did not stick')
+  await settings.getByRole('radio', { name: new RegExp(profile.mode === 'big' ? 'Big Maker' : 'Little Maker') }).click()
+  await page.getByRole('radio', { name: '30 minutes' }).click()
+  if ((await saved()).settings.playtimeMinutes !== 30) fail('the playtime choice did not stick')
+  await page.getByRole('slider', { name: /Volume/ }).fill('50')
+  if ((await saved()).settings.volume !== 0.5) fail('the volume did not stick')
+
+  await page.getByRole('button', { name: 'Reset all data' }).click()
+  const confirm = page.getByRole('alertdialog')
+  await confirm.getByRole('button', { name: 'Keep everything' }).click()
+  if (!(await saved()).stars) fail('Keep everything should keep the stars')
+  await page.getByRole('button', { name: 'Reset all data' }).click()
+  await confirm.getByRole('button', { name: 'Erase' }).click()
+  const after = await saved()
+  if (after.stars || after.shelf.length || after.badges.length) fail('Reset all data did not erase squishies, stars and badges')
+  if (after.settings.playtimeMinutes !== 30) fail('Reset all data should keep the settings')
+
+  // System back leaves Settings, and going forward again must not skip the gate.
+  await page.goBack()
+  await page.waitForTimeout(300)
+  await page.goForward()
+  await page.waitForTimeout(300)
+  if (await page.getByRole('radiogroup', { name: 'Maker mode' }).isVisible()) fail('history forward reopened Settings without the gate')
+}
+
+// Playtime reminder: nap screen when the time is up; only a grown-up can add more time.
+async function napFlow(page, profile) {
+  const fail = (msg) => problems.push(`[${profile.name} / nap] ${msg}`)
+  await goTitle(page)
+  const limit = profile.mode === 'big' ? 20 : 15
+  // Set before the app starts (the running app saves its own count as the page unloads).
+  await page.addInitScript((ms) => {
+    if (sessionStorage.getItem('nap-test')) return
+    sessionStorage.setItem('nap-test', '1')
+    localStorage.setItem('thalia-squishies:playtime', JSON.stringify({ used: ms, last: Date.now() }))
+  }, limit * 60000 - 1000)
+  await page.reload()
+  const nap = page.getByRole('dialog', { name: 'Your squishies need a nap!' })
+  try {
+    await nap.waitFor({ timeout: 12000 })
+  } catch {
+    fail(`no nap screen after the ${limit}-minute default`)
+    return
+  }
+  await check(page, profile, 'nap')
+  await page.getByRole('button', { name: 'Grown-ups: more time' }).click()
+  await passGate(page, { fail })
+  if (await nap.count()) fail('the grown-up did not get more time')
+}
+
+// Offline: once the service worker is ready, the app reloads and plays with no network.
+async function offlineFlow(page, profile, context) {
+  const fail = (msg) => problems.push(`[${profile.name} / offline] ${msg}`)
+  await page.evaluate(() => navigator.serviceWorker.ready)
+  await page.reload() // let the worker control the page
+  await context.setOffline(true)
+  await page.reload()
+  if (!(await page.getByRole('button', { name: /make/i }).isVisible())) fail('the title screen did not load offline')
+  await page.getByRole('button', { name: /make/i }).click()
+  if (!(await page.getByRole('region', { name: 'Choices' }).isVisible())) fail('the maker did not load offline')
+  await check(page, profile, 'offline')
+  await context.setOffline(false)
 }

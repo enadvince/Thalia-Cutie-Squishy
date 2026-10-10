@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom'
 import { motion } from 'framer-motion'
 import { usePlatform } from './PlatformContext'
 import { transitions } from '../lib/motion'
+import { useModal } from '../lib/useModal'
 
 // Modal picker sheet. iOS: HIG sheet (grabber, centered title, "Done").
 // Android: M3 modal bottom sheet (scrim, drag handle, 28dp corners).
@@ -12,6 +13,7 @@ export default function Sheet({ title, onClose, children }) {
   const ios = platform === 'ios'
   const titleId = useId()
   const ref = useRef(null)
+  useModal(ref)
   const onCloseRef = useRef(onClose)
   onCloseRef.current = onClose
 

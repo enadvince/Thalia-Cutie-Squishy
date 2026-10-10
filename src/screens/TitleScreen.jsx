@@ -6,7 +6,7 @@ import { PrimaryButton } from '../components/Buttons'
 import { useGame } from '../state/GameContext'
 import Icon from '../components/Icon'
 
-export default function TitleScreen({ onPlay, onRandom, onShelf }) {
+export default function TitleScreen({ onPlay, onRandom, onShelf, onGrownUps }) {
   const reduce = useReducedMotion()
   const { stars } = useGame().state
 
@@ -62,6 +62,15 @@ export default function TitleScreen({ onPlay, onRandom, onShelf }) {
           </button>
         </div>
       </div>
+
+      {/* Grown-ups corner: behind the parent gate */}
+      <button
+        type="button"
+        onClick={onGrownUps}
+        className="flex min-h-[56px] items-center gap-2 self-end rounded-full px-4 text-[length:var(--text-label)] font-bold text-ink-soft"
+      >
+        <Icon name="lock" size={20} /> Grown-ups
+      </button>
     </main>
   )
 }

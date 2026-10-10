@@ -1,6 +1,6 @@
 import { createContext, useContext, useEffect, useReducer } from 'react'
 import { MODES } from '../data/modes'
-import { setMuted } from '../lib/audio'
+import { setMuted, setVolume } from '../lib/audio'
 import { rewardsAfterSave, EMPTY_EXPLORED } from '../lib/rewards'
 import { squishyName } from '../data/names'
 import { randomDraft } from '../lib/randomize'
@@ -28,7 +28,8 @@ export const DEFAULT_DRAFT = {
 }
 
 const initialState = {
-  settings: { mode: 'little', muted: false, readAloud: MODES.little.readAloudDefault },
+  // volume: 0–1 of the (already capped) maximum. playtimeMinutes: null = the mode's default, 0 = off.
+  settings: { mode: 'little', muted: false, readAloud: MODES.little.readAloudDefault, volume: 1, playtimeMinutes: null },
   // `draft` is the squishy being made; `past` holds earlier drafts for Undo.
   maker: { step: 0, furthest: 0, draft: DEFAULT_DRAFT, past: [] },
   // Saved squishies: [{ id, name, draft, savedAt }]
@@ -41,18 +42,11 @@ const initialState = {
   surpriseSeen: null, // the day she last unwrapped the daily surprise
 }
 
-// Testing only, until the parent gate (Phase 7) can switch modes: ?mode=big or ?mode=little.
-function withModeOverride(state) {
-  const mode = new URLSearchParams(window.location.search).get('mode')
-  if (!MODES[mode]) return state
-  return { ...state, settings: { ...state.settings, mode, readAloud: MODES[mode].readAloudDefault } }
-}
-
 function load() {
   try {
     const saved = JSON.parse(localStorage.getItem(STORAGE_KEY))
     if (saved) {
-      return withModeOverride({
+      return {
         settings: { ...initialState.settings, ...saved.settings },
         maker: { ...initialState.maker, ...saved.maker, draft: { ...DEFAULT_DRAFT, ...saved.maker?.draft } },
         shelf: saved.shelf ?? [],
@@ -61,12 +55,12 @@ function load() {
         explored: { ...EMPTY_EXPLORED, ...saved.explored },
         news: saved.news ?? [],
         surpriseSeen: saved.surpriseSeen ?? null,
-      })
+      }
     }
   } catch {
     // Storage unavailable or corrupt: start fresh.
   }
-  return withModeOverride(initialState)
+  return initialState
 }
 
 function reducer(state, action) {
@@ -112,6 +106,14 @@ function reducer(state, action) {
       return { ...state, news: state.news.slice(1) }
     case 'revealSurprise':
       return { ...state, surpriseSeen: action.day }
+    case 'setMode': {
+      // Switching mode (behind the parent gate) brings that mode's read-aloud and playtime defaults.
+      const mode = MODES[action.mode]
+      return { ...state, settings: { ...state.settings, mode: mode.id, readAloud: mode.readAloudDefault, playtimeMinutes: null } }
+    }
+    case 'resetAll':
+      // Erase squishies, stars, badges and the squishy in progress. Grown-up settings stay.
+      return { ...initialState, settings: state.settings }
     case 'setSetting':
       return { ...state, settings: { ...state.settings, [action.key]: action.value } }
     default:
@@ -144,8 +146,12 @@ export function GameProvider({ children }) {
   }, [state])
 
   useEffect(() => setMuted(state.settings.muted), [state.settings.muted])
+  useEffect(() => setVolume(state.settings.volume), [state.settings.volume])
 
   return <GameContext.Provider value={{ state, dispatch }}>{children}</GameContext.Provider>
 }
 
 export const useGame = () => useContext(GameContext)
+
+// The playtime reminder length in minutes (0 = off).
+export const playtimeLimit = (settings) => settings.playtimeMinutes ?? MODES[settings.mode].playtimeMinutes

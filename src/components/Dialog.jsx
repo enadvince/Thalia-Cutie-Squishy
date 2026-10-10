@@ -2,6 +2,7 @@ import { useEffect, useId, useRef } from 'react'
 import { createPortal } from 'react-dom'
 import { motion } from 'framer-motion'
 import { usePlatform } from './PlatformContext'
+import { useModal } from '../lib/useModal'
 
 // Platform alert/dialog. iOS: HIG alert (centered, side-by-side buttons, bold safe choice).
 // Android: M3 dialog (28dp corners, start-aligned title, text buttons at the end).
@@ -11,6 +12,8 @@ export default function Dialog({ title, message, actions, onDismiss, children })
   const titleId = useId()
   const messageId = useId()
   const primaryRef = useRef(null)
+  const boxRef = useRef(null)
+  useModal(boxRef)
 
   useEffect(() => {
     primaryRef.current?.focus()
@@ -29,6 +32,8 @@ export default function Dialog({ title, message, actions, onDismiss, children })
         onClick={onDismiss}
       />
       <motion.div
+        ref={boxRef}
+        tabIndex={-1}
         role="alertdialog"
         aria-modal="true"
         aria-labelledby={titleId}
@@ -36,7 +41,7 @@ export default function Dialog({ title, message, actions, onDismiss, children })
         initial={{ scale: 0.9, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
         transition={{ type: 'spring', stiffness: 400, damping: 28 }}
-        className={`chrome-font relative w-full max-w-sm shadow-[0_12px_40px_rgba(59,42,74,0.25)] ${
+        className={`chrome-font relative w-full max-w-sm outline-none shadow-[0_12px_40px_rgba(59,42,74,0.25)] ${
           ios ? 'rounded-[1.25rem] bg-cream/95 text-center backdrop-blur-xl' : 'rounded-[28px] bg-[var(--md-sys-color-surface-container)] p-6'
         }`}
       >
