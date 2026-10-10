@@ -134,3 +134,96 @@ export function boing() {
   osc.stop(t + 0.42)
   wobble.stop(t + 0.42)
 }
+
+// A dry crunchy crackle: a quick run of tiny noise clicks.
+export function crackle() {
+  if (muted) return
+  const ac = audio()
+  const t = ac.currentTime
+  for (let i = 0; i < 7; i++) {
+    const start = t + i * 0.025 + Math.random() * 0.015
+    const src = ac.createBufferSource()
+    src.buffer = noiseBuffer(ac)
+    const filter = ac.createBiquadFilter()
+    filter.type = 'highpass'
+    filter.frequency.value = 2200 + Math.random() * 2500
+    const gain = ac.createGain()
+    gain.gain.setValueAtTime(0.0001, start)
+    gain.gain.exponentialRampToValueAtTime(0.7, start + 0.002)
+    gain.gain.exponentialRampToValueAtTime(0.0001, start + 0.02)
+    src.connect(filter).connect(gain).connect(master)
+    src.start(start, Math.random() * 0.2)
+    src.stop(start + 0.03)
+  }
+}
+
+// A soft, slow "fwoomp" of air (slow-rising foam, butter slime).
+export function swish() {
+  if (muted) return
+  const ac = audio()
+  const t = ac.currentTime
+  const src = ac.createBufferSource()
+  src.buffer = noiseBuffer(ac)
+  const filter = ac.createBiquadFilter()
+  filter.type = 'lowpass'
+  filter.frequency.setValueAtTime(300, t)
+  filter.frequency.linearRampToValueAtTime(900, t + 0.12)
+  filter.frequency.linearRampToValueAtTime(250, t + 0.28)
+  const gain = ac.createGain()
+  gain.gain.setValueAtTime(0.0001, t)
+  gain.gain.exponentialRampToValueAtTime(0.8, t + 0.08)
+  gain.gain.exponentialRampToValueAtTime(0.0001, t + 0.3)
+  src.connect(filter).connect(gain).connect(master)
+  src.start(t)
+  src.stop(t + 0.3)
+}
+
+// A soft low thud (dough).
+export function thud() {
+  if (muted) return
+  const ac = audio()
+  const t = ac.currentTime
+  const osc = ac.createOscillator()
+  const gain = ac.createGain()
+  osc.type = 'sine'
+  osc.frequency.setValueAtTime(150, t)
+  osc.frequency.exponentialRampToValueAtTime(70, t + 0.15)
+  gain.gain.setValueAtTime(0.0001, t)
+  gain.gain.exponentialRampToValueAtTime(0.9, t + 0.01)
+  gain.gain.exponentialRampToValueAtTime(0.0001, t + 0.18)
+  osc.connect(gain).connect(master)
+  osc.start(t)
+  osc.stop(t + 0.2)
+}
+
+// A stretchy rubbery squeak; `amount` 0–1 bends the pitch up.
+export function squeak(amount = 0.5) {
+  if (muted) return
+  const ac = audio()
+  const t = ac.currentTime
+  const osc = ac.createOscillator()
+  const filter = ac.createBiquadFilter()
+  const gain = ac.createGain()
+  osc.type = 'sawtooth'
+  osc.frequency.setValueAtTime(320 + amount * 200, t)
+  osc.frequency.exponentialRampToValueAtTime(520 + amount * 500, t + 0.18)
+  filter.type = 'lowpass'
+  filter.frequency.value = 1400
+  gain.gain.setValueAtTime(0.0001, t)
+  gain.gain.exponentialRampToValueAtTime(0.25, t + 0.02)
+  gain.gain.exponentialRampToValueAtTime(0.0001, t + 0.2)
+  osc.connect(filter).connect(gain).connect(master)
+  osc.start(t)
+  osc.stop(t + 0.22)
+}
+
+// Plays a named sound from a filling's `sounds` config.
+const NAMED = {
+  crackle,
+  swish,
+  thud,
+  squelch: (amount) => squelch(amount),
+  squeak: (amount) => squeak(amount),
+  pop: () => pop(1.1),
+}
+export const playNamed = (name, amount) => NAMED[name]?.(amount)

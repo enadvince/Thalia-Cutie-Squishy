@@ -92,6 +92,27 @@ const PATHS = {
       <path d="M8 11V8a4 4 0 018 0v3" />
     </>
   ),
+  // Play step
+  pencil: <path d="M4 20l1-5L15.5 4.5a2.1 2.1 0 013 3L8 18zM13.5 6.5l4 4" />,
+  stretch: <path d="M3 12h18M7 8l-4 4 4 4M17 8l4 4-4 4" />,
+  poke: (
+    <>
+      <path d="M9 21v-6.5L6.5 12a1.6 1.6 0 012.3-2.3L10 11V4.5a1.5 1.5 0 013 0V10l4.5 1a2 2 0 011.5 2.2L18 21" />
+      <path d="M3 4l2 1.5M3 9h2" />
+    </>
+  ),
+  shake: (
+    <>
+      <rect x="8" y="4" width="8" height="16" rx="2.5" />
+      <path d="M4 8q-1.5 4 0 8M20 8q1.5 4 0 8" />
+    </>
+  ),
+  shelf: (
+    <>
+      <path d="M3 20h18M3 12h18M5 12V4h4v8M11 12V6h3v6M16 20v-5h3v5M6 20v-4h5v4" />
+    </>
+  ),
+  plus: <path d="M12 5v14M5 12h14" />,
   // Filling types
   crunch: <path d="M4 15l3-6 4 3 3-6 3 5 3-2v8H4z M8 18h1M13 17h1M17 18h.5" />,
   rise: (

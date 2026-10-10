@@ -4,7 +4,7 @@ import { fillingById } from '../data/fillings'
 import { colorById } from '../data/colors'
 import { addonById } from '../data/addons'
 import AddonArt from './AddonArt'
-import { seeded } from '../lib/random'
+import { seeded, safeId } from '../lib/random'
 
 // Archimedean spiral from (cx, cy) outwards, used for the color swirl.
 function spiralPath(cx, cy, offset) {
@@ -18,11 +18,31 @@ function spiralPath(cx, cy, offset) {
 
 const BIG_ART = new Set(['cloudPuppy', 'bowKitty', 'bunnyImp', 'pinkLamb', 'sunnyPup', 'pompom'])
 
+// Where each add-on piece floats inside `box` (stable for the same add-ons). Also used by Step 4's canvas.
+export function addonPieces(addons, box, scatterTop) {
+  const bottom = box.y + box.h
+  return addons.flatMap((id) => {
+    const addon = addonById(id)
+    if (!addon) return []
+    const rand = seeded(id)
+    return Array.from({ length: addon.count }, (_, i) => ({
+      key: `${id}-${i}`,
+      art: addon.art,
+      index: i,
+      x: box.x + 22 + rand() * (box.w - 44),
+      y: scatterTop + rand() * (bottom - scatterTop - 20),
+      rot: rand() * 60 - 30,
+      scale: BIG_ART.has(addon.art) ? 1.5 : 1.2,
+      delay: rand() * 3,
+    }))
+  })
+}
+
 // The filling itself: colors swirled together, the filling type's texture and shine, and add-ons
 // suspended inside. Fills `box` from `top` (the wavy surface) down. The caller clips it to its container.
 // Add-ons are scattered from `scatterTop` down and only show once the surface is above them.
-export default function FillingMass({ draft, box, top, center, scatterTop = top + 26 }) {
-  const uid = useId().replace(/:/g, '')
+export default function FillingMass({ draft, box, top, center, scatterTop = top + 26, showAddons = true }) {
+  const uid = safeId(useId())
   const filling = fillingById(draft.fillingType)
   const [base, ...swirls] = draft.fillingColors.map(colorById)
   const { gloss, pattern } = filling.texture
@@ -37,23 +57,7 @@ export default function FillingMass({ draft, box, top, center, scatterTop = top 
 
   const spirals = useMemo(() => [spiralPath(cx, cy, 0), spiralPath(cx, cy, Math.PI)], [cx, cy])
 
-  const pieces = useMemo(() => {
-    return draft.addons.flatMap((id) => {
-      const addon = addonById(id)
-      if (!addon) return []
-      const rand = seeded(id)
-      return Array.from({ length: addon.count }, (_, i) => ({
-        key: `${id}-${i}`,
-        art: addon.art,
-        index: i,
-        x: box.x + 22 + rand() * (box.w - 44),
-        y: scatterTop + rand() * (bottom - scatterTop - 20),
-        rot: rand() * 60 - 30,
-        scale: BIG_ART.has(addon.art) ? 1.5 : 1.2,
-        delay: rand() * 3,
-      }))
-    })
-  }, [draft.addons, box.x, box.w, bottom, scatterTop])
+  const pieces = useMemo(() => addonPieces(draft.addons, box, scatterTop), [draft.addons, box, scatterTop])
 
   const left = box.x - 30
   const width = box.w + 60
@@ -123,7 +127,8 @@ export default function FillingMass({ draft, box, top, center, scatterTop = top 
       </g>
 
       {/* add-ons suspended in the filling (only the ones the surface has reached) */}
-      {pieces
+      {showAddons &&
+        pieces
         .filter((p) => p.y > top + 10)
         .map((p) => (
           <g key={p.key} transform={`translate(${p.x.toFixed(1)} ${p.y.toFixed(1)}) rotate(${p.rot.toFixed(0)})`}>

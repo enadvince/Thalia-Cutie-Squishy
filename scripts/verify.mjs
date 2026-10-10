@@ -74,13 +74,14 @@ for (const profile of PROFILES) {
   for (let i = 1; i <= 4; i++) {
     if (i === 2) await stepTwo(page, profile)
     else if (i === 3) await stepThree(page, profile)
-    else await check(page, profile, `step${i}`)
+    else if (i === 4) await stepFour(page, profile)
     if (i < 4) await page.getByRole('button', { name: /^next/i }).click()
   }
   // System back should walk back through steps, then to the title.
   for (let i = 0; i < 4; i++) await page.goBack()
   await page.waitForTimeout(500)
   if (!(await page.getByRole('button', { name: /make/i }).isVisible())) problems.push(`[${profile.name}] back did not return to title`)
+  await makeAnother(page, profile)
   await context.close()
 }
 
@@ -216,6 +217,77 @@ async function stepThree(page, profile) {
   await hold(800)
   if (!(await meter.getAttribute('aria-valuetext')).includes('extra')) fail('overfilling did not show the extra-squishy state')
   await check(page, profile, 'step3-full')
+}
+
+function shelfOf(page) {
+  return page.evaluate(() => JSON.parse(localStorage.getItem('thalia-squishies:v1')).shelf)
+}
+
+// Step 4: soft-body press and stretch, the play buttons, Save to my Shelf, Rename.
+async function stepFour(page, profile) {
+  const fail = (msg) => problems.push(`[${profile.name} / step4] ${msg}`)
+  const canvas = page.getByRole('img', { name: /Press, stretch or poke/ })
+  await canvas.waitFor()
+  await page.waitForTimeout(1500) // textures
+  await check(page, profile, 'step4-play')
+
+  await canvas.evaluate((el) => el.scrollIntoView({ block: 'center' }))
+  const b = await canvas.boundingBox()
+  const side = Math.min(b.width, b.height)
+  const cx = b.x + b.width / 2
+  const cy = b.y + b.height / 2
+  await page.mouse.move(cx, cy + side * 0.05)
+  await page.mouse.down()
+  await page.waitForTimeout(500)
+  await page.screenshot({ path: `${OUT}/${profile.name}--step4-press.png` })
+  await page.mouse.up()
+  await page.waitForTimeout(600)
+  await page.mouse.move(cx + side * 0.3, cy)
+  await page.mouse.down()
+  await page.mouse.move(cx + side * 0.7, cy - 8, { steps: 8 })
+  await page.waitForTimeout(250)
+  await page.screenshot({ path: `${OUT}/${profile.name}--step4-stretch.png` })
+  await page.mouse.up()
+
+  for (const name of ['Squish', 'Stretch', 'Poke', 'Shake']) await page.getByRole('button', { name, exact: true }).click()
+
+  await page.getByRole('button', { name: 'Save to my Shelf' }).click()
+  if ((await shelfOf(page)).length !== 1) fail('Save to my Shelf did not save')
+  if (!(await page.getByRole('button', { name: 'On my Shelf!' }).isVisible())) fail('saved state not shown')
+
+  await page.getByRole('button', { name: 'Rename my squishy' }).click()
+  const dialog = page.getByRole('dialog')
+  await dialog.waitFor()
+  let expected = 'Mochi'
+  if (profile.mode === 'big') {
+    const input = dialog.getByLabel('Type a name')
+    await input.fill('Zorglub')
+    await dialog.getByRole('button', { name: 'Use it' }).click()
+    if (!(await dialog.getByRole('status').textContent()).includes('different')) fail('a word not on the allow-list was not gently refused')
+    await input.fill('rainbow mochi')
+    await dialog.getByRole('button', { name: 'Use it' }).click()
+    expected = 'Rainbow Mochi'
+  } else {
+    if (await dialog.getByLabel('Type a name').count()) fail('Little Maker should not show a keyboard')
+    await dialog.getByRole('button', { name: 'Mochi', exact: true }).click()
+  }
+  await dialog.waitFor({ state: 'detached' })
+  if (!(await page.getByRole('heading', { name: expected }).isVisible())) fail(`name did not change to ${expected}`)
+  if ((await shelfOf(page))[0]?.name !== expected) fail('renaming a saved squishy did not update the Shelf')
+  await check(page, profile, 'step4-saved')
+}
+
+// Make another: saves what's there and starts a fresh squishy at Step 1.
+async function makeAnother(page, profile) {
+  const fail = (msg) => problems.push(`[${profile.name} / make another] ${msg}`)
+  await page.getByRole('button', { name: /make/i }).click()
+  await page.getByRole('button', { name: 'Step 4: Play' }).click()
+  await page.getByRole('button', { name: 'Make another' }).click()
+  await page.waitForTimeout(400)
+  if (!(await page.getByRole('button', { name: 'Step 1: Filling' }).getAttribute('aria-current'))) fail('did not go back to Step 1')
+  if ((await shelfOf(page)).length !== 1) fail('the shelf should still hold exactly the one saved squishy')
+  const draft = await page.evaluate(() => JSON.parse(localStorage.getItem('thalia-squishies:v1')).maker.draft)
+  if (draft.savedId || draft.name || draft.fill !== 0) fail('the new squishy did not start fresh')
 }
 
 console.log(problems.length ? `\n${problems.length} problem(s):\n${problems.join('\n')}` : '\nAll checks passed.')

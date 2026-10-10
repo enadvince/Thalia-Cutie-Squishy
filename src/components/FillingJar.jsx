@@ -3,13 +3,14 @@ import { motion } from 'framer-motion'
 import { fillingById } from '../data/fillings'
 import { colorById } from '../data/colors'
 import FillingMass from './FillingMass'
+import { safeId } from '../lib/random'
 
 // Jar geometry (viewBox 0 0 260 320)
 const IN = { x: 44, y: 66, w: 172, h: 230, r: 36 } // glass interior
 const FILL_TOP = 112
 
 export default function FillingJar({ draft }) {
-  const uid = useId().replace(/:/g, '')
+  const uid = safeId(useId())
   const filling = fillingById(draft.fillingType)
   const colors = draft.fillingColors.map(colorById)
   const changeKey = JSON.stringify(draft)

@@ -18,6 +18,7 @@ import FillingPanel, { FILLING_SECTIONS } from '../steps/FillingPanel'
 import SquishyView from '../components/SquishyView'
 import CasingPanel, { CASING_SECTIONS } from '../steps/CasingPanel'
 import { FillProvider, FillStage, FillPanel } from '../steps/FillStep'
+import { PlayProvider, PlayStage, PlayPanel } from '../steps/PlayStep'
 
 // What each step shows: Stage = live preview (custom game look), Panel = pickers (platform sheet).
 // Steps without a view yet show a "Coming soon!" placeholder.
@@ -25,6 +26,7 @@ const STEP_VIEWS = {
   filling: { Stage: FillingJar, Panel: FillingPanel, sections: FILLING_SECTIONS },
   casing: { Stage: SquishyView, Panel: CasingPanel, sections: CASING_SECTIONS },
   fill: { Stage: FillStage, Panel: FillPanel, Provider: FillProvider },
+  play: { Stage: PlayStage, Panel: PlayPanel, Provider: PlayProvider, tallStage: true },
 }
 
 // The 4-step maker shell.
@@ -82,8 +84,8 @@ export default function MakerScreen({ onGoToStep, onBack }) {
           <StepProvider>
           <section
             aria-label="Squishy preview"
-            className="flex h-[46%] min-h-[210px] shrink-0 flex-col rounded-[var(--radius-card)] bg-white/60 p-2
-              shadow-[var(--shadow-soft)] md:landscape:h-auto"
+            className={`flex ${view?.tallStage ? 'h-[62%]' : 'h-[46%]'} min-h-[210px] shrink-0 flex-col rounded-[var(--radius-card)] bg-white/60 p-2
+              shadow-[var(--shadow-soft)] md:landscape:h-auto`}
           >
             <div className="flex items-center gap-2">
               <IconButton icon="speak" label="Read it to me" onClick={() => speak(instruction)} />
@@ -118,6 +120,7 @@ export default function MakerScreen({ onGoToStep, onBack }) {
               <view.Panel
                 section={section}
                 onSection={(id) => setSectionByStep((m) => ({ ...m, [current.id]: id }))}
+                onGoToStep={onGoToStep}
               />
             </section>
           )}
