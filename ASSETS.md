@@ -11,14 +11,12 @@ Every picture in the game is original and kid-safe: no real brands, logos or exi
 | Stickers (16) | `public/assets/stickers/*.svg` | 9 starters, plus 7 that unlock with stars (5, 8, 12, 16, 20, 25, 30). |
 | Squishies, add-ons, sprays, scents, faces | `src/components/*.jsx` | Drawn in code so they can squish, tint and swirl. |
 
-## Higgsfield pass (blocked)
+## Optional: generated art
 
-Higgsfield image generation needs a paid Higgsfield plan. The account is on the free plan (10 credits), and every image model answered "Requires basic plan or higher", so nothing was generated and no credits were spent.
-
-When the plan allows it, generate these with `gpt_image_2_5` (medium quality, about 0.5 credits each, about 4.5 credits for all 9). Then:
+The hand-made SVG art above is the chosen final look. Higgsfield was tried, but its free plan can't generate images ("Requires basic plan or higher"). If a free image tool becomes available, these prompts work with any generator that can make transparent PNGs. Then:
 - **Backgrounds:** convert to WebP and show them behind the title screen in place of `Backdrop`.
-- **Icon:** save to `public/icons/` and re-render the PNG sizes.
-- **Stickers:** save the transparent PNGs to `public/assets/stickers/` and add a line each to `src/data/stickers.js`. They can replace the SVG versions or be added as new unlocks.
+- **Icon:** save to `public/icons/` and re-render the PNG sizes with `node scripts/make-icons.mjs` (or replace them directly).
+- **Stickers:** save the transparent PNGs to `public/assets/stickers/` and add a line each to `src/data/stickers.js`, either replacing the SVG versions or as new unlocks.
 
 | # | Asset | Size | Prompt |
 |---|---|---|---|
