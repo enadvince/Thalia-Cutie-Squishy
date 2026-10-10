@@ -61,6 +61,11 @@ function Screens() {
           unlockSpeech()
           openMaker(state.maker.step) // resume where she left off (autosave)
         }}
+        onRandom={() => {
+          unlockSpeech()
+          dispatch({ type: 'randomSquishy' })
+          openMaker(3)
+        }}
         onShelf={() => {
           unlockSpeech()
           history.pushState({ screen: 'shelf' }, '')

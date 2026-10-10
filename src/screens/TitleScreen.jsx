@@ -1,11 +1,12 @@
 import { motion, useReducedMotion } from 'framer-motion'
 import Mascot from '../components/Mascot'
 import { MuteToggle } from '../components/AppBar'
+import { IconButton } from '../components/Buttons'
 import { PrimaryButton } from '../components/Buttons'
 import { useGame } from '../state/GameContext'
 import Icon from '../components/Icon'
 
-export default function TitleScreen({ onPlay, onShelf }) {
+export default function TitleScreen({ onPlay, onRandom, onShelf }) {
   const reduce = useReducedMotion()
   const { stars } = useGame().state
 
@@ -26,7 +27,10 @@ export default function TitleScreen({ onPlay, onShelf }) {
           <Icon name="star" size={26} filled className="text-[#8a6d00]" />
           {stars}
         </span>
-        <MuteToggle />
+        <div className="flex items-center gap-2">
+          <IconButton icon="shelf" label="My Shelf" onClick={onShelf} />
+          <MuteToggle />
+        </div>
       </div>
 
       <div className="flex flex-1 flex-col items-center justify-center gap-6 py-4 text-center landscape:flex-row landscape:gap-10">
@@ -50,11 +54,11 @@ export default function TitleScreen({ onPlay, onShelf }) {
           </PrimaryButton>
           <button
             type="button"
-            onClick={onShelf}
+            onClick={onRandom}
             className="flex min-h-[56px] items-center gap-2 rounded-full bg-white px-6 font-display text-[length:var(--text-title)]
               font-semibold text-ink shadow-[var(--shadow-soft)]"
           >
-            <Icon name="shelf" size={28} /> My Shelf
+            <Icon name="dice" size={28} /> Surprise me!
           </button>
         </div>
       </div>

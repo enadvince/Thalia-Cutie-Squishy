@@ -13,12 +13,15 @@ import SprayArt from '../components/SprayArt'
 import ScentArt from '../components/ScentArt'
 import { ShapeParts, Face, casingColor } from '../components/SquishyView'
 import LockedCard from '../components/LockedCard'
+import Icon from '../components/Icon'
+import { LABEL_PRESETS, MAX_LABEL_LENGTH, isAllowedLabel, tidyName } from '../data/names'
 
 export const CASING_SECTIONS = [
   { id: 'spray', label: 'Spray', icon: 'spray', instruction: 'Pick a sparkly spray!' },
   { id: 'scent', label: 'Scent', icon: 'scent', instruction: 'Pick a yummy scent!' },
   { id: 'type', label: 'Type', icon: 'balloon', instruction: 'Pick your casing!' },
   { id: 'shape', label: 'Shape', icon: 'shapes', instruction: 'Pick a cute shape!' },
+  { id: 'words', label: 'Words', icon: 'text', instruction: 'Print some words!' },
 ]
 
 export default function CasingPanel({ section, onSection }) {
@@ -118,6 +121,14 @@ export default function CasingPanel({ section, onSection }) {
         </OptionGrid>
       )}
 
+      {section === 'words' && (
+        <WordsPicker
+          label={draft.label}
+          onPick={(text) => choose({ label: text }, text, 1.2)}
+          onClear={() => choose({ label: null }, null, 0.8)}
+        />
+      )}
+
       {sodaOpen && (
         <Sheet title="Pick a soda flavor!" onClose={() => setSodaOpen(false)}>
           <OptionGrid>
@@ -168,6 +179,13 @@ function TypeThumb({ type, color }) {
         ))}
         <rect width="40" height="40" fill={color} opacity={type.opacity} />
         {type.wax && <rect width="40" height="40" fill="#fff7ea" opacity="0.8" />}
+        {type.bubbles &&
+          [[8, 8], [20, 8], [32, 8], [14, 19], [26, 19], [8, 30], [20, 30], [32, 30]].map(([x, y], i) => (
+            <g key={i}>
+              <circle cx={x} cy={y} r="4.6" fill="#fff" opacity="0.45" stroke="#fff" strokeWidth="0.6" />
+              <circle cx={x - 1.4} cy={y - 1.4} r="1.1" fill="#fff" />
+            </g>
+          ))}
         <ellipse cx="13" cy="11" rx="6" ry="2.6" fill="#fff" opacity={type.gloss * 0.8} transform="rotate(-30 13 11)" />
       </g>
       <circle cx="20" cy="20" r="17" fill="none" stroke="#3b2a4a" strokeOpacity="0.2" strokeWidth="1" />
@@ -190,5 +208,80 @@ function StickerGrid({ selected, onPick }) {
         ),
       )}
     </OptionGrid>
+  )
+}
+
+// Words printed on the casing: type them (checked against the allow-list) or tap a ready-made one.
+function WordsPicker({ label, onPick, onClear }) {
+  const [text, setText] = useState('')
+  const [tryAgain, setTryAgain] = useState(false)
+  return (
+    <div className="flex flex-col gap-3">
+      <form
+        className="flex flex-col gap-2"
+        onSubmit={(e) => {
+          e.preventDefault()
+          if (isAllowedLabel(text)) {
+            onPick(tidyName(text))
+            setText('')
+          } else setTryAgain(true)
+        }}
+      >
+        <label htmlFor="casing-words" className="text-[length:var(--text-label)] font-extrabold text-ink">
+          Type your words
+        </label>
+        <div className="flex gap-2">
+          <input
+            id="casing-words"
+            value={text}
+            maxLength={MAX_LABEL_LENGTH}
+            autoComplete="off"
+            autoCorrect="off"
+            spellCheck={false}
+            enterKeyHint="done"
+            onChange={(e) => {
+              setText(e.target.value.replace(/[^A-Za-z ]/g, ''))
+              setTryAgain(false)
+            }}
+            className="min-h-[56px] min-w-0 flex-1 rounded-2xl bg-white px-4 font-label text-[length:var(--text-body)] text-ink
+              ring-2 ring-ink/20 outline-none focus:ring-ink"
+          />
+          <button
+            type="submit"
+            className="min-h-[56px] shrink-0 rounded-2xl bg-pink-300 px-4 text-[length:var(--text-label)] font-extrabold text-ink"
+          >
+            Print it
+          </button>
+        </div>
+        <p role="status" className="min-h-[1.5em] text-[length:var(--text-label)] text-ink-soft">
+          {tryAgain ? 'Let’s try a different word! Or pick one below.' : ''}
+        </p>
+      </form>
+      {label && (
+        <button
+          type="button"
+          onClick={onClear}
+          aria-label={`Take off the words ${label}`}
+          className="flex min-h-[56px] items-center justify-center gap-2 self-start rounded-full bg-white px-5 text-[length:var(--text-label)]
+            font-extrabold text-ink shadow-[var(--shadow-soft)]"
+        >
+          <Icon name="trash" size={20} /> No words
+        </button>
+      )}
+      <div className="grid grid-cols-[repeat(auto-fill,minmax(8rem,1fr))] gap-2 pb-2">
+        {LABEL_PRESETS.map((w) => (
+          <button
+            key={w}
+            type="button"
+            aria-pressed={label === w}
+            onClick={() => onPick(w)}
+            className={`flex min-h-[56px] items-center justify-center gap-2 rounded-2xl px-3 text-[length:var(--text-label)] font-extrabold
+              text-ink shadow-[var(--shadow-soft)] ${label === w ? 'bg-pink-300 ring-[3px] ring-ink' : 'bg-white'}`}
+          >
+            {w}
+          </button>
+        ))}
+      </div>
+    </div>
   )
 }

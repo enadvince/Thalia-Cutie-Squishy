@@ -95,6 +95,22 @@ const PATHS = {
   ),
   // Play step
   pencil: <path d="M4 20l1-5L15.5 4.5a2.1 2.1 0 013 3L8 18zM13.5 6.5l4 4" />,
+  text: <path d="M5 6V4h14v2M12 4v16M9 20h6" />,
+  dice: (
+    <>
+      <rect x="4" y="4" width="16" height="16" rx="4" />
+      <path d="M8.5 8.5h.01M15.5 8.5h.01M12 12h.01M8.5 15.5h.01M15.5 15.5h.01" strokeWidth="3" />
+    </>
+  ),
+  bubbles: (
+    <>
+      <circle cx="7" cy="7" r="3" />
+      <circle cx="17" cy="7" r="3" />
+      <circle cx="12" cy="12" r="3" />
+      <circle cx="7" cy="17" r="3" />
+      <circle cx="17" cy="17" r="3" />
+    </>
+  ),
   stretch: <path d="M3 12h18M7 8l-4 4 4 4M17 8l4 4-4 4" />,
   poke: (
     <>
@@ -136,6 +152,14 @@ const PATHS = {
       <circle cx="9" cy="12" r="4.5" />
       <circle cx="15" cy="12" r="4.5" />
       <path d="M12 3v2M18.5 5l-1.5 1.5M5.5 5L7 6.5" />
+    </>
+  ),
+  orbs: (
+    <>
+      <circle cx="8" cy="9" r="4" />
+      <circle cx="16" cy="10" r="3.5" />
+      <circle cx="11.5" cy="16.5" r="4" />
+      <path d="M6.5 7.5h.01M15 8.5h.01M10 15h.01" />
     </>
   ),
   clay: (

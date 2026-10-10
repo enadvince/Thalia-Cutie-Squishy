@@ -25,7 +25,7 @@ npm run verify       # screenshots land in verify-out/
 
 ## Where things live
 
-- `src/data/*.js`: all game content: steps, modes, fillings (incl. play physics and sounds), add-ons, colors (100, generated from 10 families), sprays, scents, casing types, shapes (with `attach` points), accessories (keychain, bag clip…), stickers, names (presets + typed-name allow-list), badges.
+- `src/data/*.js`: all game content: steps, modes, fillings (incl. play physics and sounds), add-ons, colors (100, generated from 10 families), sprays, scents, casing types, shapes (with `attach` points), accessories (keychain, bag clip…), stickers, names (presets + typed-name allow-list, also used for printed words), badges.
 - `src/lib/speech.js`: read-aloud voice choice (clearest available) and `SAY_LIKE`, respellings for words speech engines mispronounce (e.g. Bead, Dough). Add options here without touching components.
 - `src/components/AddonArt.jsx`: the drawing for each add-on (an add-on's `art` key in `addons.js` points here).
 - `src/styles/tokens.css`: candy palette, M3 color roles, iOS roles, motion and size tokens.
@@ -40,7 +40,9 @@ npm run verify       # screenshots land in verify-out/
 - `src/lib/softbody.js` lays a 25×25 grid of springy points over those pictures. Fingers push and pull the points, and each point springs back to its rest spot. Squeezed areas shade darker, so dents read as dents.
 - `src/lib/glMesh.js` draws the pictures bent along the grid with WebGL. The add-ons float between the two layers, clipped to the squishy, so they can swirl when it's shaken.
 - How each texture feels and sounds (springiness, wobble, stretch, how much of a dent stays) lives in `src/data/fillings.js` under `physics` and `sounds`.
-- The casing type changes the surface too (`play` in `src/data/casings.js`): Plastic shows pale stretch marks, Balloon bubbles up in a ring around a press, Gel holds dents and shapes, and Wax adds a coat that cracks and chips off (`src/lib/waxChips.js`).
+- The casing type changes the surface too (`play` in `src/data/casings.js`): Plastic shows pale stretch marks, Balloon bubbles up in a ring around a press, Gel holds dents and shapes, Wax adds a coat that cracks and chips off (`src/lib/waxChips.js`), and Bubble Wrap has bubbles that pop under a press or a rub (`src/lib/bubbleWrap.js`).
+- Texture and casing decide together how moldable the squishy is (`playPhysics` in `casings.js`): the casing scales how much of the texture's moldability comes through and how fast a molded shape creeps back (`recover`). Putty in Gel stays put; Putty in a Balloon is slowly pulled back into shape by the rubber.
+- Words printed on the casing (Step 2 → Words) are part of the casing picture, so they're clipped to the shape and bend with it. Each shape can set where they go with `label` in `shapes.js`.
 - Without WebGL it falls back to a simple whole-squishy squash.
 
 ## Adding a sticker

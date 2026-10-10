@@ -49,7 +49,7 @@ Legend: ✅ verified · 🔜 lands in a later phase (phase number) · 🤖 check
 | K2 | No third-party analytics/ads SDKs | ✅ |
 | K3 | COPPA-safe: localStorage only, no accounts | ✅ |
 | K4 | Playtime reminder | 🔜 7 |
-| K5 | Text input via allow-list or presets only | ✅ Little Maker: presets only; Big Maker: typed names accepted only if every word is on `ALLOWED_WORDS` (`src/data/names.js`) |
+| K5 | Text input via allow-list or presets only | ✅ Names — Little Maker: presets only; Big Maker: typed names accepted only if every word is on `ALLOWED_WORDS` (`src/data/names.js`). Printed casing words (both modes, by parent request): ready-made words, or typed words accepted only if every word is on `ALLOWED_WORDS` (max 14 letters) |
 
 ## Phase sign-off log
 

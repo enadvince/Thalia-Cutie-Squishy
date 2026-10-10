@@ -197,6 +197,11 @@ export class SoftBody {
         }
       }
     }
+    if (this.physics.recover) {
+      // The casing slowly pulls molded spots back to the original shape.
+      const back = 1 - Math.exp(-dt * this.physics.recover)
+      for (let k = 0; k < this.rest.length; k++) this.rest[k] += (this.home[k] - this.rest[k]) * back
+    }
     if (this.physics.stress) {
       const fade = Math.exp(-dt / 1.8)
       for (let v = 0; v < this.stress.length; v++) this.stress[v] *= fade

@@ -138,6 +138,15 @@ export default function FillingMass({ draft, box, top, center, scatterTop = top 
           <path d="M-4 30q12 -14 26 -4t26 -2" fill="none" stroke="#3b2a4a" strokeWidth="1.2" opacity="0.07" />
           <path d="M6 10q10 6 20 0t22 2" fill="none" stroke="#fff" strokeWidth="1.5" opacity="0.18" />
         </pattern>
+        <pattern id={`${uid}-orbs`} width="22" height="20" patternUnits="userSpaceOnUse">
+          {/* water beads: plump see-through spheres with a glint */}
+          {[[6, 6, 5.2], [17, 9, 5], [10, 16, 4.8], [0, 16, 4.6], [22, 16, 4.6]].map(([cx, cy, r], i) => (
+            <g key={i}>
+              <circle cx={cx} cy={cy} r={r} fill="#fff" opacity="0.18" stroke="#3b2a4a" strokeOpacity="0.12" strokeWidth="0.7" />
+              <circle cx={cx - r * 0.35} cy={cy - r * 0.4} r={r * 0.28} fill="#fff" opacity="0.75" />
+            </g>
+          ))}
+        </pattern>
         <pattern id={`${uid}-folds`} width="50" height="40" patternUnits="userSpaceOnUse">
           <path d="M5 30q20 -26 40 0" fill="none" stroke="#fff" strokeWidth="2.5" opacity="0.35" />
         </pattern>

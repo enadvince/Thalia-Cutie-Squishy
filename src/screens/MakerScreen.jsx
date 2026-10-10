@@ -111,7 +111,7 @@ export default function MakerScreen({ onGoToStep, onBack }) {
           {view && (
             <section
               aria-label="Choices"
-              className={`min-h-[180px] flex-1 overflow-y-auto p-3 md:landscape:rounded-[var(--radius-card)] ${
+              className={`min-h-[180px] flex-1 overflow-y-auto p-3 pb-28 scroll-pb-28 md:landscape:rounded-[var(--radius-card)] ${
                 platform === 'ios'
                   ? 'rounded-t-[1.75rem] bg-white/85 backdrop-blur-xl'
                   : 'rounded-t-[28px] bg-[var(--md-sys-color-surface-container)]'

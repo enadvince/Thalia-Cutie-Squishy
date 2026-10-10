@@ -16,10 +16,10 @@ export default function SegmentedControl({ label, items, value, onChange }) {
       <div
         role="tablist"
         aria-label={label}
-        className={`chrome-font flex ${
+        className={`chrome-font flex flex-wrap ${
           ios
             ? 'gap-1 rounded-[1.25rem] bg-[rgba(118,118,128,0.14)] p-1'
-            : 'overflow-hidden rounded-full border border-[var(--md-sys-color-outline)]'
+            : 'overflow-hidden rounded-[28px] border border-[var(--md-sys-color-outline)]'
         }`}
       >
         {items.map((item, i) => {
@@ -36,7 +36,7 @@ export default function SegmentedControl({ label, items, value, onChange }) {
                 pop(1.2)
                 onChange(item.id)
               }}
-              className={`fit-item relative flex min-h-[56px] min-w-0 flex-1 items-center justify-center px-1 py-1
+              className={`fit-item relative flex min-h-[56px] min-w-[56px] flex-1 items-center justify-center px-1 py-1
                 text-[length:var(--text-label)] font-semibold text-ink
                 ${ios ? 'rounded-[1rem]' : i > 0 ? 'border-l border-[var(--md-sys-color-outline)]' : ''}`}
             >

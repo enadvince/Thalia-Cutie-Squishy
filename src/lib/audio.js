@@ -191,6 +191,50 @@ export function crunch() {
   }
 }
 
+// Water beads rolling and squeezing: a little cluster of round, wet "plip"s.
+export function plip(amount = 0.5) {
+  if (muted) return
+  const ac = audio()
+  const t = ac.currentTime
+  const count = 3 + Math.round(amount * 3)
+  for (let i = 0; i < count; i++) {
+    const start = t + i * 0.035 + Math.random() * 0.025
+    const osc = ac.createOscillator()
+    const gain = ac.createGain()
+    const f = 700 + Math.random() * 700
+    osc.type = 'sine'
+    osc.frequency.setValueAtTime(f, start)
+    osc.frequency.exponentialRampToValueAtTime(f * 1.9, start + 0.035) // rising = drippy, watery
+    gain.gain.setValueAtTime(0.0001, start)
+    gain.gain.exponentialRampToValueAtTime(0.35, start + 0.004)
+    gain.gain.exponentialRampToValueAtTime(0.0001, start + 0.05)
+    osc.connect(gain).connect(master)
+    osc.start(start)
+    osc.stop(start + 0.06)
+  }
+}
+
+// One bubble-wrap bubble popping: a sharp little snap of air.
+export function snap() {
+  if (muted) return
+  const ac = audio()
+  const t = ac.currentTime
+  const src = ac.createBufferSource()
+  src.buffer = noiseBuffer(ac)
+  const filter = ac.createBiquadFilter()
+  filter.type = 'bandpass'
+  filter.Q.value = 1.2
+  filter.frequency.value = 1300 + Math.random() * 900
+  const gain = ac.createGain()
+  gain.gain.setValueAtTime(0.0001, t)
+  gain.gain.exponentialRampToValueAtTime(1, t + 0.002)
+  gain.gain.exponentialRampToValueAtTime(0.0001, t + 0.045)
+  src.connect(filter).connect(gain).connect(master)
+  src.start(t, Math.random() * 0.2)
+  src.stop(t + 0.05)
+  pop(1.6 + Math.random() * 0.4)
+}
+
 // A soft, slow "fwoomp" of air (slow-rising foam, butter slime).
 export function swish() {
   if (muted) return
@@ -348,6 +392,7 @@ export function rubber(amount = 0.5, rising = true) {
 const NAMED = {
   crackle,
   crunch,
+  plip: (amount) => plip(amount),
   click,
   cream,
   creak,

@@ -86,6 +86,7 @@ for (const profile of PROFILES.filter((p) => !ONLY || ONLY.includes(p.name))) {
   if (!(await page.getByRole('button', { name: /make/i }).isVisible())) problems.push(`[${profile.name}] back did not return to title`)
   await makeAnother(page, profile)
   await shelfFlow(page, profile)
+  await surpriseFlow(page, profile)
   await context.close()
 }
 
@@ -101,7 +102,8 @@ async function stepOne(page, profile) {
   await panel.getByRole('button', { name: 'Crunchy' }).click()
   if ((await pressed(panel)) !== 1) fail('filling type is not single-select')
 
-  if ((await panel.getByRole('button').count()) < 12) fail('expected 12 textures')
+  if ((await panel.getByRole('button').count()) < 13) fail('expected 13 textures')
+  await panel.getByRole('button', { name: 'Water Beads' }).click()
   await page.getByRole('tab', { name: 'Colors' }).click()
   for (const name of ['Cotton Candy', 'Cherry Pop', 'Fairy Floss', 'Strawberry Milk']) await panel.getByRole('button', { name }).click()
   // Default Bubblegum Pop + 4 more = 5 picks, capped to 4 (oldest drops).
@@ -176,6 +178,7 @@ async function stepTwo(page, profile) {
   await check(page, profile, 'step2-scent')
   await page.getByRole('tab', { name: 'Type' }).click()
   await panel.getByRole('button', { name: 'Plastic' }).click()
+  await panel.getByRole('button', { name: 'Bubble Wrap' }).click() // popped in Step 4
   await page.getByRole('tab', { name: 'Shape' }).click()
 
   // One profile saves a preview of every shape for manual review.
@@ -190,6 +193,22 @@ async function stepTwo(page, profile) {
   }
   await panel.getByRole('button', { name: 'Kitty' }).click()
   await check(page, profile, 'step2-shape')
+
+  // Words printed on the casing: a ready-made one, a typed one (allow-list), and a refused one.
+  const label = () => page.evaluate(() => JSON.parse(localStorage.getItem('thalia-squishies:v1')).maker.draft.label)
+  await page.getByRole('tab', { name: 'Words' }).click()
+  await panel.getByRole('button', { name: 'Best Friend' }).click()
+  if ((await label()) !== 'Best Friend') fail('picking ready-made words did not print them')
+  const input = panel.getByLabel('Type your words')
+  await input.fill('happy bunny')
+  await panel.getByRole('button', { name: 'Print it' }).click()
+  if ((await label()) !== 'Happy Bunny') fail(`typed words were not printed (got ${await label()})`)
+  await input.fill('zzzz')
+  await panel.getByRole('button', { name: 'Print it' }).click()
+  if ((await label()) !== 'Happy Bunny') fail('a word not on the allow-list was printed')
+  if (!(await panel.getByText('Let’s try a different word!').isVisible())) fail('no gentle message for a refused word')
+  if (!(await page.getByRole('img', { name: /printed with “Happy Bunny”/ }).first().isVisible())) fail('the words are not on the squishy')
+  await check(page, profile, 'step2-words')
 }
 
 // Step 3: fill by dragging the piping bag and by holding FILL!; Undo; full and overfull.
@@ -380,3 +399,17 @@ async function shelfFlow(page, profile) {
 
 console.log(problems.length ? `\n${problems.length} problem(s):\n${problems.join('\n')}` : '\nAll checks passed.')
 process.exit(problems.length ? 1 : 0)
+
+// Title screen "Surprise me!": a random squishy, filled and ready on the Play step.
+async function surpriseFlow(page, profile) {
+  const fail = (msg) => problems.push(`[${profile.name} / surprise] ${msg}`)
+  const surprise = page.getByRole('button', { name: 'Surprise me!' })
+  for (let i = 0; i < 20 && !(await surprise.isVisible()); i++) await page.goBack()
+  await surprise.click()
+  await page.waitForTimeout(500)
+  await dismissCelebrations(page)
+  if (!(await page.getByRole('button', { name: 'Step 4: Play' }).getAttribute('aria-current'))) fail('did not open the Play step')
+  const draft = await page.evaluate(() => JSON.parse(localStorage.getItem('thalia-squishies:v1')).maker.draft)
+  if (draft.fill !== 1 || !draft.name || draft.savedId) fail('the surprise squishy is not a fresh, filled squishy')
+  await check(page, profile, 'surprise')
+}
