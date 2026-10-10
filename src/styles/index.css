@@ -131,3 +131,28 @@ button {
 .float-bob {
   animation: float-bob 3.2s ease-in-out infinite;
 }
+
+/* Scent bubbles drift up and fade, looping slowly. */
+@keyframes scent-rise {
+  0% {
+    translate: 0 8px;
+    opacity: 0;
+  }
+  30%,
+  60% {
+    opacity: 0.9;
+  }
+  100% {
+    translate: 0 -30px;
+    opacity: 0;
+  }
+}
+.scent-rise {
+  animation: scent-rise 4.2s ease-in-out infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .scent-rise {
+    animation: none !important;
+    opacity: 0.85;
+  }
+}

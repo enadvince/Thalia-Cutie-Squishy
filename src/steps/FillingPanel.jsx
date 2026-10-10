@@ -5,10 +5,10 @@ import { ADDONS, MAX_ADDONS, addonById } from '../data/addons'
 import { COLOR_FAMILIES, LITTLE_SETS, MAX_FILLING_COLORS, colorById, onColor } from '../data/colors'
 import { useGame } from '../state/GameContext'
 import { pop } from '../lib/audio'
-import { speak } from '../lib/speech'
+import { useChoose } from './useChoose'
 import { bouncy } from '../lib/motion'
 import SegmentedControl from '../components/SegmentedControl'
-import OptionCard, { CheckBadge } from '../components/OptionCard'
+import OptionCard, { CheckBadge, OptionGrid as Grid } from '../components/OptionCard'
 import { AddonThumb } from '../components/AddonArt'
 import Icon from '../components/Icon'
 
@@ -26,15 +26,10 @@ function toggleCapped(list, id, max, min = 0) {
 }
 
 export default function FillingPanel({ section, onSection }) {
-  const { state, dispatch } = useGame()
+  const { state } = useGame()
   const { draft } = state.maker
-  const { readAloud, muted, mode } = state.settings
-
-  const choose = (patch, name, pitch = 1) => {
-    pop(pitch)
-    if (readAloud && !muted && name) speak(name)
-    dispatch({ type: 'updateDraft', patch })
-  }
+  const { mode } = state.settings
+  const choose = useChoose()
 
   return (
     <div className="flex flex-col gap-4">
@@ -105,10 +100,6 @@ export default function FillingPanel({ section, onSection }) {
     </div>
   )
 }
-
-const Grid = ({ children }) => (
-  <div className="grid grid-cols-[repeat(auto-fill,minmax(7.5rem,1fr))] gap-3">{children}</div>
-)
 
 // Shows picks as filled slots (e.g. ●●○ for 2 of 3), so "how many" needs no reading.
 function Tray({ label, max, items }) {

@@ -25,7 +25,7 @@ npm run verify       # screenshots land in verify-out/
 
 ## Where things live
 
-- `src/data/*.js`: all game content: steps, modes, fillings, add-ons, colors (100, generated from 10 families). Add options here without touching components.
+- `src/data/*.js`: all game content: steps, modes, fillings, add-ons, colors (100, generated from 10 families), sprays, scents, casing types, shapes, stickers. Add options here without touching components.
 - `src/components/AddonArt.jsx`: the drawing for each add-on (an add-on's `art` key in `addons.js` points here).
 - `src/styles/tokens.css`: candy palette, M3 color roles, iOS roles, motion and size tokens.
 - `src/components/`: platform-adaptive chrome (`AppBar`, `Buttons`, `StepTabs`) and the `Mascot`.
@@ -33,11 +33,20 @@ npm run verify       # screenshots land in verify-out/
 - `GUIDELINES.md`: HIG/M3 checklist, signed off at the end of each phase.
 - `RESEARCH.md`: Mobbin/Watermelon pattern summary.
 
+## Adding a sticker
+
+1. Drop a square image with a transparent background (SVG or PNG) into `public/assets/stickers/`.
+2. Add one line to `src/data/stickers.js`:
+   ```js
+   { id: 'my-sticker', name: 'My Sticker', image: 'my-sticker.svg', unlock: 'starter' },
+   ```
+   Use `unlock: { stars: 10 }` instead to show it as a locked silhouette ("Coming soon!") until 10 stars are earned (stars arrive in Phase 6).
+
 ## Build phases
 
 1. ✅ Setup, design tokens, title screen, 4-step stepper shell, research summary
 2. ✅ Step 1: filling + live preview jar
-3. Step 2: casing, sprays, scents, locked stickers
+3. ✅ Step 2: casing, sprays, scents, locked stickers
 4. Step 3: fill interaction
 5. Step 4: play physics + sounds
 6. Shelf, stars, badges, unlocks, daily surprise

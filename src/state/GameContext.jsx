@@ -5,8 +5,18 @@ import { setMuted } from '../lib/audio'
 // All state lives here and autosaves to localStorage. Nothing leaves the device.
 const STORAGE_KEY = 'thalia-squishies:v1'
 
-// A new squishy starts as pink slime so the preview is never empty and Next always works.
-export const DEFAULT_DRAFT = { fillingType: 'slime', fillingColors: ['bubblegum-pop'], addons: [] }
+// A new squishy starts with every choice already made (pink slime in a gel dumpling),
+// so the preview is never empty and Next always works.
+export const DEFAULT_DRAFT = {
+  fillingType: 'slime',
+  fillingColors: ['bubblegum-pop'],
+  addons: [],
+  spray: 'glitter',
+  sticker: null,
+  scent: 'bubble-gum',
+  casingType: 'gel',
+  shape: 'dumpling',
+}
 
 const initialState = {
   settings: { mode: 'little', muted: false, readAloud: MODES.little.readAloudDefault },

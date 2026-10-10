@@ -35,7 +35,7 @@ Legend: ✅ verified · 🔜 lands in a later phase (phase number) · 🤖 check
 | P4 | UI font: SF Pro (`-apple-system`) | UI font: Roboto | ✅ `--chrome-font` |
 | P5 | Dynamic Type (`font: -apple-system-body` drives rem) | Font scale (rem follows browser text size) | ✅ |
 | P6 | Motion: springs | M3 easing/duration tokens | ✅ `lib/motion.js`, `tokens.css` |
-| P7 | Pickers in a sheet-style panel (1.75rem top corners, material blur) | Pickers in an M3 standard (non-modal) bottom sheet surface (28dp top corners, surface-container) | ✅ Step 1 · 🔜 Step 2 |
+| P7 | Pickers in a sheet-style panel (1.75rem top corners, material blur) | Pickers in an M3 standard (non-modal) bottom sheet surface (28dp top corners, surface-container) | ✅ Steps 1–2; Sticker picker is a modal sheet (iOS sheet / M3 modal bottom sheet with scrim), closes on Done, scrim tap, Escape, or system back |
 | P11 | Section switch: HIG segmented control (grey track, white thumb) | M3 segmented buttons (outlined, check on selected) | ✅ `SegmentedControl.jsx` |
 | P8 | Alerts per HIG | M3 dialogs | 🔜 6–7 |
 | P9 | Haptics: light only (Safari has no vibrate API, so it's a no-op) | Light `vibrate(10)` tick, never continuous | ✅ step advance · 🔜 5 |
@@ -57,3 +57,4 @@ Legend: ✅ verified · 🔜 lands in a later phase (phase number) · 🤖 check
 |---|---|---|
 | 1 | Title, Maker shell (4 steps) | ✅ `npm run verify`: 7 profiles × 5 screens with no problems. Manual screenshot review done. |
 | 2 | Step 1: Type / Colors / Add-ons + live jar, Little & Big Maker | ✅ `npm run verify`: 9 profiles (adds Big Maker iPhone + iPad) with no problems; Step 1 flow checks pass (single-select type, 3-color cap, 5-add-on cap, More colors, family tabs, Undo). Manual review fixed: phone overflow, truncated segment labels, jar overflowing its card, invisible tiny add-on thumbnails. |
+| 3 | Step 2: Spray / Scent / Type / Shape, sticker sheet, scent tint + particles | ✅ `npm run verify`: 9 profiles with no problems; Step 2 flow checks pass (single-select spray, locked sticker can't be picked, Done and system back close the sheet without leaving the step). Manual review of all 15 shapes. Fixed: the sheet was hidden behind the stepper (transformed ancestor broke `position: fixed`; now portaled), the puppy's ears were hidden, and the sheet title truncated at 200% text. |
