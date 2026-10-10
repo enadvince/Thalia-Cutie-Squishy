@@ -4,12 +4,15 @@ const VERT = `
 attribute vec2 a_pos;
 attribute vec2 a_uv;
 attribute float a_shade;
+attribute float a_alpha;
 uniform vec2 u_scale;
 varying vec2 v_uv;
 varying float v_shade;
+varying float v_alpha;
 void main() {
   v_uv = a_uv;
   v_shade = a_shade;
+  v_alpha = a_alpha;
   gl_Position = vec4((a_pos.x - 0.5) * u_scale.x, (0.5 - a_pos.y) * u_scale.y, 0.0, 1.0);
 }`
 const FRAG = `
@@ -18,10 +21,12 @@ uniform sampler2D u_tex;
 uniform bool u_cut;
 varying vec2 v_uv;
 varying float v_shade;
+varying float v_alpha;
 void main() {
   vec4 c = texture2D(u_tex, v_uv);
   if (u_cut && c.a < 0.5) discard;
-  gl_FragColor = vec4(c.rgb * v_shade, c.a);
+  // Premultiplied alpha: shade the color (capped at full), fade everything by v_alpha.
+  gl_FragColor = vec4(min(c.rgb * v_shade, vec3(c.a)), c.a) * v_alpha;
 }`
 
 export function createRenderer(canvas) {
@@ -45,6 +50,7 @@ export function createRenderer(canvas) {
     pos: gl.getAttribLocation(program, 'a_pos'),
     uv: gl.getAttribLocation(program, 'a_uv'),
     shade: gl.getAttribLocation(program, 'a_shade'),
+    alpha: gl.getAttribLocation(program, 'a_alpha'),
     cut: gl.getUniformLocation(program, 'u_cut'),
     scale: gl.getUniformLocation(program, 'u_scale'),
   }
@@ -52,7 +58,13 @@ export function createRenderer(canvas) {
   gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA) // premultiplied alpha
   gl.pixelStorei(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL, true)
 
-  const buffers = { pos: gl.createBuffer(), uv: gl.createBuffer(), shade: gl.createBuffer(), index: gl.createBuffer() }
+  const buffers = {
+    pos: gl.createBuffer(),
+    uv: gl.createBuffer(),
+    shade: gl.createBuffer(),
+    alpha: gl.createBuffer(),
+    index: gl.createBuffer(),
+  }
   const textures = {}
 
   const bind = (buffer, location, size, data) => {
@@ -61,12 +73,13 @@ export function createRenderer(canvas) {
     gl.enableVertexAttribArray(location)
     gl.vertexAttribPointer(location, size, gl.FLOAT, false, 0, 0)
   }
-  const draw = (name, pos, uv, shade, index) => {
+  const draw = (name, pos, uv, shade, alpha, index) => {
     if (!textures[name]) return
     gl.bindTexture(gl.TEXTURE_2D, textures[name])
     bind(buffers.pos, loc.pos, 2, pos)
     bind(buffers.uv, loc.uv, 2, uv)
     bind(buffers.shade, loc.shade, 1, shade)
+    bind(buffers.alpha, loc.alpha, 1, alpha)
     gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, buffers.index)
     gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, index, gl.DYNAMIC_DRAW)
     gl.drawElements(gl.TRIANGLES, index.length, gl.UNSIGNED_SHORT, 0)
@@ -86,6 +99,7 @@ export function createRenderer(canvas) {
     return idx
   }
   let meshIndex = null
+  let meshAlpha = null
 
   return {
     setTexture(name, source) {
@@ -128,22 +142,31 @@ export function createRenderer(canvas) {
     // body: a SoftBody (positions, texture coords from its home grid, and shading).
     drawMesh(name, body) {
       meshIndex ??= gridIndex(body.n)
-      draw(name, body.pos, body.home, body.shade, meshIndex)
+      meshAlpha ??= new Float32Array(body.shade.length).fill(1)
+      draw(name, body.pos, body.home, body.shade, meshAlpha, meshIndex)
     },
-    // quads: [{ corners: [x0,y0, x1,y1, x2,y2, x3,y3], uv: [u0, v0, u1, v1] }]
+    // quads: [{ corners: [x0,y0, x1,y1, x2,y2, x3,y3], uv: [u0, v0, u1, v1] or 8 corner values,
+    //           shade?: number, alpha?: number }]
     drawQuads(name, quads) {
       if (!quads.length) return
       const pos = new Float32Array(quads.length * 8)
       const uv = new Float32Array(quads.length * 8)
+      const shade = new Float32Array(quads.length * 4)
+      const alpha = new Float32Array(quads.length * 4)
       const index = new Uint16Array(quads.length * 6)
       quads.forEach((q, i) => {
         pos.set(q.corners, i * 8)
-        const [u0, v0, u1, v1] = q.uv
-        uv.set([u0, v0, u1, v0, u1, v1, u0, v1], i * 8)
+        if (q.uv.length === 8) uv.set(q.uv, i * 8)
+        else {
+          const [u0, v0, u1, v1] = q.uv
+          uv.set([u0, v0, u1, v0, u1, v1, u0, v1], i * 8)
+        }
+        shade.fill(q.shade ?? 1, i * 4, i * 4 + 4)
+        alpha.fill(q.alpha ?? 1, i * 4, i * 4 + 4)
         const b = i * 4
         index.set([b, b + 1, b + 2, b, b + 2, b + 3], i * 6)
       })
-      draw(name, pos, uv, new Float32Array(quads.length * 4).fill(1), index)
+      draw(name, pos, uv, shade, alpha, index)
     },
   }
 }

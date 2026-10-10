@@ -3,6 +3,7 @@
 const PATHS = {
   // System chrome
   chevronBack: <path d="M15 5l-7 7 7 7" />,
+  chevronNext: <path d="M9 5l7 7-7 7" />,
   arrowBack: <path d="M20 12H5m6-7l-7 7 7 7" />,
   arrowNext: <path d="M4 12h15m-6-7l7 7-7 7" />,
   undo: <path d="M9 14L4 9l5-5M4 9h10a6 6 0 010 12h-3" />,
@@ -113,7 +114,62 @@ const PATHS = {
     </>
   ),
   plus: <path d="M12 5v14M5 12h14" />,
-  // Filling types
+  // Rewards and Shelf
+  star: <path d="M12 3.5l2.6 5.3 5.8.8-4.2 4.1 1 5.8L12 16.8l-5.2 2.7 1-5.8-4.2-4.1 5.8-.8z" />,
+  gift: (
+    <>
+      <rect x="4" y="10" width="16" height="10" rx="2" />
+      <path d="M3 7h18v3H3zM12 7v13M12 7c-2-4-6-4-6-1.5S10 7 12 7zM12 7c2-4 6-4 6-1.5S14 7 12 7z" />
+    </>
+  ),
+  trash: <path d="M5 7h14M10 7V4.5h4V7M7 7l1 13h8l1-13M10 11v5M14 11v5" />,
+  medal: (
+    <>
+      <circle cx="12" cy="14" r="6" />
+      <path d="M8 3l2.5 5.5M16 3l-2.5 5.5M12 11.5l.9 1.8 2 .3-1.4 1.4.3 2-1.8-1-1.8 1 .3-2-1.4-1.4 2-.3z" />
+    </>
+  ),
+  home: <path d="M4 11l8-7 8 7v9h-5v-6h-6v6H4z" />,
+  // Filling textures
+  click: (
+    <>
+      <circle cx="9" cy="12" r="4.5" />
+      <circle cx="15" cy="12" r="4.5" />
+      <path d="M12 3v2M18.5 5l-1.5 1.5M5.5 5L7 6.5" />
+    </>
+  ),
+  clay: (
+    <>
+      <path d="M4 18c0-4 3-7 8-7s8 3 8 7c0 1.5-3.5 2.5-8 2.5S4 19.5 4 18z" />
+      <path d="M15 11l4-7M17.5 6.5l2 1" />
+    </>
+  ),
+  tub: (
+    <>
+      <rect x="4" y="5" width="16" height="4" rx="1.5" />
+      <path d="M5 9v8a3 3 0 003 3h8a3 3 0 003-3V9M8 13q4 2 8 0" />
+    </>
+  ),
+  foam: (
+    <>
+      <circle cx="8" cy="14" r="4" />
+      <circle cx="15" cy="12" r="5" />
+      <circle cx="11" cy="7" r="3" />
+      <path d="M4 20h16" />
+    </>
+  ),
+  sugar: (
+    <>
+      <path d="M4 9l8-4 8 4-8 4z" />
+      <path d="M4 9v7l8 4v-7M20 9v7l-8 4" />
+    </>
+  ),
+  candle: (
+    <>
+      <rect x="7" y="10" width="10" height="11" rx="2" />
+      <path d="M12 10V7M12 3c1.5 1.5 1.5 3 0 4-1.5-1-1.5-2.5 0-4z" />
+    </>
+  ),
   crunch: <path d="M4 15l3-6 4 3 3-6 3 5 3-2v8H4z M8 18h1M13 17h1M17 18h.5" />,
   rise: (
     <>

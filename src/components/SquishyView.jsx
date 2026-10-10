@@ -29,7 +29,7 @@ export function ShapeParts({ parts, ...props }) {
       return <ellipse key={i} cx={cx} cy={cy} rx={rx} ry={ry} transform={`rotate(${rot} ${cx} ${cy})`} {...props} />
     }
     if (p.r) return <rect key={i} x={p.r[0]} y={p.r[1]} width={p.r[2]} height={p.r[3]} rx={p.r[4]} {...props} />
-    return <path key={i} d={p.d} {...props} />
+    return <path key={i} d={p.d} {...(p.evenodd && { fillRule: 'evenodd', clipRule: 'evenodd' })} {...props} />
   })
 }
 
@@ -81,13 +81,109 @@ function ShapeDecor({ decor, color }) {
         </g>
       )
     case 'butterEdges':
-      return <path d="M34 128H172V222M172 128L226 80" {...line} />
+      return <path d="M14 124H222V212M222 124L246 98" {...line} />
     case 'crust':
       return <path d="M60 104q20-14 38-6M120 92q12-10 24 0M168 98q18-6 32 8" {...line} />
     case 'snout':
       return <ellipse cx="130" cy="176" rx="30" ry="20" fill="#fff" opacity="0.35" />
+    case 'facets':
+      return <path d="M24 98H236M72 40L104 98L130 232M188 40L156 98L130 232M104 98L130 40L156 98" {...line} />
+    case 'icing':
+      return (
+        <g>
+          <path d="M40 120q16-10 30 4t30-6 30 6 30-6 30 6 32-4" fill="none" stroke="#fff" strokeWidth="6" strokeLinecap="round" opacity="0.7" />
+          {[[60, 96, 30], [98, 66, -20], [150, 62, 40], [196, 92, -35], [82, 186, 15], [182, 182, -10]].map(([x, y, r], i) => (
+            <rect key={i} x={x - 2} y={y - 7} width="4" height="14" rx="2" fill={['#ff7eb6', '#4fd1c5', '#ffd84d', '#a98bff'][i % 4]} transform={`rotate(${r} ${x} ${y})`} />
+          ))}
+        </g>
+      )
+    case 'boba':
+      return (
+        <g>
+          <rect x="150" y="-2" width="14" height="96" rx="7" fill="#ff9fd2" stroke="#fff" strokeWidth="2" transform="rotate(18 157 46)" />
+          <path d="M56 90H204" {...line} />
+          {[[100, 222], [122, 230], [146, 226], [166, 216], [112, 206], [138, 210], [90, 210]].map(([x, y], i) => (
+            <circle key={i} cx={x} cy={y} r="9" fill="#5a3a2e" opacity="0.8" />
+          ))}
+        </g>
+      )
     case 'whiskers':
       return <path d="M60 166H28M62 178L32 188M200 166H232M198 178L228 188" {...line} />
+    default:
+      return null
+  }
+}
+
+const METAL = '#c7cedd'
+const METAL_DARK = '#8f99b0'
+
+// Keychain, bag clip, necklace or phone charm, hanging from `at` (the top of the shape).
+export function Accessory({ kind, at }) {
+  const [x, y] = at
+  const len = Math.min(58, y + 12) // keep it inside the picture
+  const top = y - len
+  const cap = <rect x={x - 9} y={y - 7} width="18" height="10" rx="3" fill={METAL} stroke={METAL_DARK} strokeWidth="1.5" />
+  const links = (from, to) => {
+    const out = []
+    for (let cy = from, i = 0; cy > to; cy -= 9, i++) {
+      out.push(
+        i % 2 ? (
+          <rect key={cy} x={x - 1.5} y={cy - 6} width="3" height="11" rx="1.5" fill={METAL} stroke={METAL_DARK} strokeWidth="1" />
+        ) : (
+          <ellipse key={cy} cx={x} cy={cy} rx="3.5" ry="6" fill="none" stroke={METAL} strokeWidth="2.5" />
+        ),
+      )
+    }
+    return out
+  }
+  switch (kind) {
+    case 'keychain':
+      return (
+        <g>
+          {links(y - 12, top + 22)}
+          <circle cx={x} cy={top + 10} r="13" fill="none" stroke={METAL} strokeWidth="4.5" />
+          <circle cx={x} cy={top + 10} r="13" fill="none" stroke={METAL_DARK} strokeWidth="1" strokeOpacity="0.6" />
+          <path d={`M${x - 9} ${top + 2}a12 12 0 0 1 9 -4`} fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" />
+          {cap}
+        </g>
+      )
+    case 'bag-clip':
+      return (
+        <g>
+          {links(y - 12, top + 26)}
+          <rect x={x - 10} y={top} width="20" height="28" rx="10" fill="none" stroke="#a98bff" strokeWidth="5" />
+          <path d={`M${x + 10} ${top + 9}v10`} stroke="#fff" strokeWidth="3" strokeLinecap="round" />
+          {cap}
+        </g>
+      )
+    case 'necklace': {
+      const beads = [0.25, 0.5, 0.75].flatMap((t) => [
+        [x - 70 * t, y - 6 - (y + 14) * t],
+        [x + 70 * t, y - 6 - (y + 14) * t],
+      ])
+      return (
+        <g>
+          <path d={`M${x - 70} -20L${x} ${y - 6}L${x + 70} -20`} fill="none" stroke="#ff9fd2" strokeWidth="3.5" strokeLinejoin="round" />
+          {beads.map(([bx, by], i) => (
+            <circle key={i} cx={bx} cy={by} r="5" fill={['#ffd84d', '#9eede5', '#d4bfff'][i % 3]} stroke="#fff" strokeWidth="1.2" />
+          ))}
+          {cap}
+        </g>
+      )
+    }
+    case 'phone-charm': {
+      const beads = []
+      for (let cy = y - 13, i = 0; cy > top + 16; cy -= 9.5, i++) beads.push([cy, ['#ff7eb6', '#9eede5', '#ffd84d', '#a98bff'][i % 4]])
+      return (
+        <g>
+          <ellipse cx={x} cy={top + 9} rx="8" ry="11" fill="none" stroke="#ff9fd2" strokeWidth="3" />
+          {beads.map(([cy, c]) => (
+            <circle key={cy} cx={x} cy={cy} r="4.8" fill={c} stroke="#fff" strokeWidth="1.2" />
+          ))}
+          {cap}
+        </g>
+      )
+    }
     default:
       return null
   }
@@ -107,7 +203,8 @@ export function inflation(fill) {
 // `fill` (Step 3 onward) pours the filling in and inflates the casing; `jiggle` and `burst`
 // are counters that play a happy jiggle / sparkle burst each time they go up.
 // For Step 4's soft-body canvas, `still` renders without animation and `layer` picks one part:
-//   'all' (default) · 'inner' (filling, no add-ons) · 'casing' (everything over the filling) · 'scent'
+//   'all' (default) · 'inner' (filling, no add-ons) · 'casing' (everything over the filling, minus a
+//   wax coat) · 'wax' (just the wax coat, which Play breaks into chips) · 'scent'
 export default function SquishyView({ draft, fill, jiggle = 0, burst = 0, still = false, layer = 'all' }) {
   const uid = safeId(useId())
   const shape = shapeById(draft.shape)
@@ -119,6 +216,7 @@ export default function SquishyView({ draft, fill, jiggle = 0, burst = 0, still 
   const showInner = layer === 'all' || layer === 'inner'
   const showCasing = layer === 'all' || layer === 'casing'
   const showScent = layer === 'all' || layer === 'scent'
+  const showWax = type.wax && (layer === 'all' || layer === 'wax')
 
   // A happy wobble on every change.
   const changeKey = JSON.stringify(draft)
@@ -168,6 +266,10 @@ export default function SquishyView({ draft, fill, jiggle = 0, burst = 0, still 
           <feFlood floodColor="#fff" floodOpacity={type.rim} />
           <feComposite in2="soft" operator="in" />
         </filter>
+        <pattern id={`${uid}-wax`} width="70" height="26" patternUnits="userSpaceOnUse">
+          <path d="M0 16q18 -7 35 0t35 0" fill="none" stroke="#fff" strokeWidth="5" opacity="0.35" />
+          <path d="M10 6l6 3M48 20l5 -3" stroke="#8a6d00" strokeWidth="0.8" opacity="0.18" />
+        </pattern>
         <radialGradient id={`${uid}-depth`} cx="42%" cy="36%" r="72%">
           <stop offset="0.5" stopColor={INK} stopOpacity="0" />
           <stop offset="1" stopColor={INK} stopOpacity="0.2" />
@@ -177,7 +279,7 @@ export default function SquishyView({ draft, fill, jiggle = 0, burst = 0, still 
       {/* floor shadow */}
       {layer === 'all' && <ellipse cx="130" cy="240" rx="88" ry="10" fill="#a3245f" opacity="0.12" />}
 
-      {(showInner || showCasing) && (
+      {(showInner || showCasing || showWax) && (
         <motion.g initial={false} animate={shape3} transition={{ type: 'spring', stiffness: 220, damping: 14 }} style={origin}>
           <motion.g
             key={`jiggle-${jiggle}`}
@@ -259,7 +361,15 @@ export default function SquishyView({ draft, fill, jiggle = 0, burst = 0, still 
                   </g>
                   {!['tentacles', 'gills'].includes(shape.decor) && <ShapeDecor decor={shape.decor} />}
                   {shape.face && <Face face={shape.face} />}
+                  {draft.accessory && draft.accessory !== 'none' && <Accessory kind={draft.accessory} at={shape.attach} />}
                 </>
+              )}
+              {showWax && (
+                <g clipPath={clip}>
+                  <rect x="-10" y="-20" width="280" height="280" fill={mix(color, '#fff7ea', 0.72)} opacity="0.86" />
+                  <rect x="-10" y="-20" width="280" height="280" fill={`url(#${uid}-wax)`} />
+                  <ellipse cx="92" cy="80" rx="34" ry="12" fill="#fff" opacity="0.35" transform="rotate(-28 92 80)" />
+                </g>
               )}
             </motion.g>
           </motion.g>

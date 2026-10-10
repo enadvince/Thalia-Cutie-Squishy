@@ -11,7 +11,7 @@ export const SCENTS = [
   { id: 'blackberry', name: 'Blackberry', tint: '#4b2a5e', particle: 'blackberry' },
   { id: 'raspberry', name: 'Raspberry', tint: '#e0306b', particle: 'raspberry' },
   { id: 'cake', name: 'Cake', tint: '#f6c48a', particle: 'cake' },
-  { id: 'royal', name: 'Royal', tint: '#7b4fd6', particle: 'crown' },
+  { id: 'orange-soda', name: 'Orange Soda', tint: '#ff9a3c', particle: 'orangeFizz' },
 ]
 
 export const scentById = (id) => SCENTS.find((s) => s.id === id) ?? SCENTS[0]

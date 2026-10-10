@@ -1,20 +1,23 @@
 import { useState } from 'react'
 import { motion } from 'framer-motion'
 import { FILLINGS } from '../data/fillings'
-import { ADDONS, MAX_ADDONS, addonById } from '../data/addons'
+import { ADDONS, MAX_ADDONS, addonById, isAddonUnlocked } from '../data/addons'
 import { COLOR_FAMILIES, LITTLE_SETS, MAX_FILLING_COLORS, colorById, onColor } from '../data/colors'
 import { useGame } from '../state/GameContext'
-import { pop } from '../lib/audio'
+import { pop, sparkle } from '../lib/audio'
+import { speak } from '../lib/speech'
+import { todayKey, todaysSurprise } from '../lib/rewards'
 import { useChoose } from './useChoose'
 import { bouncy } from '../lib/motion'
 import SegmentedControl from '../components/SegmentedControl'
 import OptionCard, { CheckBadge, OptionGrid as Grid } from '../components/OptionCard'
 import { AddonThumb } from '../components/AddonArt'
 import Icon from '../components/Icon'
+import LockedCard from '../components/LockedCard'
 
 export const FILLING_SECTIONS = [
-  { id: 'type', label: 'Type', icon: 'drip', instruction: 'Pick your filling!' },
-  { id: 'colors', label: 'Colors', icon: 'palette', instruction: 'Pick up to 3 colors!' },
+  { id: 'type', label: 'Texture', icon: 'drip', instruction: 'Pick your texture!' },
+  { id: 'colors', label: 'Colors', icon: 'palette', instruction: 'Pick up to 4 colors!' },
   { id: 'addons', label: 'Add-ons', icon: 'bead', instruction: 'Add fun bits!' },
 ]
 
@@ -30,6 +33,11 @@ export default function FillingPanel({ section, onSection }) {
   const { draft } = state.maker
   const { mode } = state.settings
   const choose = useChoose()
+  // Toggling something off pops (lower) but isn't read aloud.
+  const pickAddon = (a) => {
+    const off = draft.addons.includes(a.id)
+    choose({ addons: toggleCapped(draft.addons, a.id, MAX_ADDONS) }, off ? null : a.name, off ? 0.8 : 1.25)
+  }
 
   return (
     <div className="flex flex-col gap-4">
@@ -63,13 +71,14 @@ export default function FillingPanel({ section, onSection }) {
           <ColorPicker
             mode={mode}
             picked={draft.fillingColors}
-            onPick={(c) =>
+            onPick={(c) => {
+              const off = draft.fillingColors.includes(c.id)
               choose(
                 { fillingColors: toggleCapped(draft.fillingColors, c.id, MAX_FILLING_COLORS, 1) },
-                c.name,
-                1.1,
+                off ? null : c.name,
+                off ? 0.8 : 1.1,
               )
-            }
+            }}
           />
         </>
       )}
@@ -84,19 +93,69 @@ export default function FillingPanel({ section, onSection }) {
             ))}
           />
           <Grid>
-            {ADDONS.map((a) => (
-              <OptionCard
-                key={a.id}
-                label={a.name}
-                selected={draft.addons.includes(a.id)}
-                onClick={() => choose({ addons: toggleCapped(draft.addons, a.id, MAX_ADDONS) }, a.name, 1.25)}
-              >
-                <AddonThumb art={a.art} />
-              </OptionCard>
-            ))}
+            <DailySurprise
+              selected={(id) => draft.addons.includes(id)}
+              onPick={(a) => pickAddon(a)}
+            />
+            {ADDONS.map((a) =>
+              isAddonUnlocked(a, state.stars) ? (
+                <OptionCard
+                  key={a.id}
+                  label={a.name}
+                  selected={draft.addons.includes(a.id)}
+                  onClick={() => pickAddon(a)}
+                >
+                  <AddonThumb art={a.art} />
+                </OptionCard>
+              ) : (
+                <LockedCard key={a.id} name={a.name} stars={a.unlock.stars}>
+                  <AddonThumb art={a.art} />
+                </LockedCard>
+              ),
+            )}
           </Grid>
         </>
       )}
+    </div>
+  )
+}
+
+// Today's mystery add-on: a wrapped gift until she taps it, then a normal pick for the rest of the day.
+function DailySurprise({ selected, onPick }) {
+  const { state, dispatch } = useGame()
+  const { readAloud, muted } = state.settings
+  const day = todayKey()
+  const surprise = todaysSurprise(day)
+
+  if (state.surpriseSeen !== day) {
+    return (
+      <motion.button
+        type="button"
+        aria-label="Today's surprise! Tap to open"
+        whileTap={{ scale: 0.9 }}
+        animate={{ rotate: [0, -4, 4, 0] }}
+        transition={{ duration: 0.6, repeat: 2, repeatDelay: 2 }}
+        onClick={() => {
+          sparkle()
+          if (readAloud && !muted) speak(`Surprise! ${surprise.name}!`)
+          dispatch({ type: 'revealSurprise', day })
+        }}
+        className="flex min-h-[7.5rem] flex-col items-center justify-center gap-1 rounded-[1.5rem] bg-gradient-to-br from-pink-300
+          via-lilac-300 to-aqua-300 p-2 text-center text-ink shadow-[var(--shadow-candy)]"
+      >
+        <Icon name="gift" size={52} />
+        <span className="text-[length:var(--text-label)] leading-tight font-extrabold">Surprise!</span>
+      </motion.button>
+    )
+  }
+  return (
+    <div className="relative">
+      <span className="absolute -top-2 left-2 z-10 flex items-center gap-1 rounded-full bg-butter-300 px-2 text-[length:var(--text-label)] font-extrabold text-ink">
+        <Icon name="gift" size={16} /> Today
+      </span>
+      <OptionCard label={surprise.name} selected={selected(surprise.id)} onClick={() => onPick(surprise)}>
+        <AddonThumb art={surprise.art} />
+      </OptionCard>
     </div>
   )
 }
@@ -127,28 +186,47 @@ function ColorPicker({ mode, picked, onPick }) {
   const [family, setFamily] = useState('all') // Big Maker: family tab
 
   if (mode === 'little') {
+    const go = (d) => {
+      pop(0.9)
+      setSet((p) => (p + d + LITTLE_SETS.length) % LITTLE_SETS.length)
+    }
     return (
-      <div className="flex flex-col gap-4">
-        {LITTLE_SETS[set].map((fam) => (
-          <FamilyGrid key={fam.id} family={fam} picked={picked} onPick={onPick} />
-        ))}
-        <button
-          type="button"
-          onClick={() => {
-            pop(0.9)
-            setSet((s) => (s + 1) % LITTLE_SETS.length)
-          }}
-          className="flex min-h-16 items-center justify-center gap-3 rounded-full bg-lilac-300 px-6
-            font-display text-[length:var(--text-title)] font-semibold text-ink shadow-[var(--shadow-candy)]"
-        >
-          <Icon name="palette" size={30} />
-          More colors
-          <span aria-hidden="true" className="flex gap-1">
-            {LITTLE_SETS.map((_, i) => (
-              <span key={i} className={`size-2.5 rounded-full ${i === set ? 'bg-ink' : 'bg-ink/25'}`} />
+      <div className="flex flex-col gap-3">
+        <div className="flex gap-1">
+          <PageArrow dir={-1} onClick={() => go(-1)} />
+          <div className="flex min-w-0 flex-1 flex-col gap-4">
+            {LITTLE_SETS[set].map((fam) => (
+              <FamilyGrid key={fam.id} family={fam} picked={picked} onPick={onPick} />
             ))}
-          </span>
-        </button>
+          </div>
+          <PageArrow dir={1} onClick={() => go(1)} />
+        </div>
+        {/* Every page as a little cluster of its colors; the ringed one is the page you're on. */}
+        <div role="tablist" aria-label="Color pages" className="flex flex-wrap justify-center gap-2">
+          {LITTLE_SETS.map((pair, i) => (
+            <button
+              key={i}
+              type="button"
+              role="tab"
+              aria-selected={i === set}
+              aria-label={`Color page ${i + 1} of ${LITTLE_SETS.length}: ${pair.map((f) => f.name).join(' and ')}`}
+              onClick={() => {
+                pop(1.1)
+                setSet(i)
+              }}
+              className={`relative grid min-h-[56px] min-w-[56px] grid-cols-5 place-content-center gap-[2px] rounded-xl p-1.5 ${
+                i === set ? 'bg-white ring-[3px] ring-ink' : 'bg-white/60'
+              }`}
+            >
+              {pair
+                .flatMap((f) => f.colors)
+                .map((c) => (
+                  <span key={c.id} className="size-[7px] rounded-full" style={{ background: c.hex }} />
+                ))}
+              {i === set && <span aria-hidden="true" className="absolute -bottom-2.5 left-1/2 size-2 -translate-x-1/2 rounded-full bg-ink" />}
+            </button>
+          ))}
+        </div>
       </div>
     )
   }
@@ -175,6 +253,22 @@ function ColorPicker({ mode, picked, onPick }) {
       {shown.map((fam) => (
         <FamilyGrid key={fam.id} family={fam} picked={picked} onPick={onPick} />
       ))}
+    </div>
+  )
+}
+
+// Big side arrows for flipping color pages; they stay in view while the colors scroll.
+function PageArrow({ dir, onClick }) {
+  return (
+    <div className="shrink-0">
+      <button
+        type="button"
+        aria-label={dir < 0 ? 'Previous colors' : 'Next colors'}
+        onClick={onClick}
+        className="sticky top-16 grid h-24 w-14 place-items-center rounded-2xl bg-lilac-300 text-ink shadow-[var(--shadow-candy)]"
+      >
+        <Icon name={dir < 0 ? 'chevronBack' : 'chevronNext'} size={32} />
+      </button>
     </div>
   )
 }

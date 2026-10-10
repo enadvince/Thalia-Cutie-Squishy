@@ -21,6 +21,9 @@ const PROFILES = [
   { name: 'ipad-bigmaker', platform: 'ios', device: devices['iPad Pro 11 landscape'], mode: 'big' },
 ]
 
+// ONLY=iphone-portrait npm run verify  → run just the named profile(s)
+const ONLY = process.env.ONLY?.split(',')
+
 const MIN_TARGET = { ios: 44, android: 48 }
 const problems = []
 const browser = await chromium.launch({ executablePath: '/opt/pw-browsers/chromium' })
@@ -56,7 +59,7 @@ async function check(page, profile, label) {
   console.log(`${result.length ? '✗' : '✓'} ${profile.name} / ${label}`)
 }
 
-for (const profile of PROFILES) {
+for (const profile of PROFILES.filter((p) => !ONLY || ONLY.includes(p.name))) {
   const context = await browser.newContext({ ...profile.device, reducedMotion: profile.reducedMotion ?? 'no-preference' })
   const page = await context.newPage()
   page.on('pageerror', (e) => problems.push(`[${profile.name}] page error: ${e.message}`))
@@ -82,6 +85,7 @@ for (const profile of PROFILES) {
   await page.waitForTimeout(500)
   if (!(await page.getByRole('button', { name: /make/i }).isVisible())) problems.push(`[${profile.name}] back did not return to title`)
   await makeAnother(page, profile)
+  await shelfFlow(page, profile)
   await context.close()
 }
 
@@ -97,20 +101,27 @@ async function stepOne(page, profile) {
   await panel.getByRole('button', { name: 'Crunchy' }).click()
   if ((await pressed(panel)) !== 1) fail('filling type is not single-select')
 
+  if ((await panel.getByRole('button').count()) < 12) fail('expected 12 textures')
   await page.getByRole('tab', { name: 'Colors' }).click()
-  for (const name of ['Cotton Candy', 'Cherry Pop', 'Fairy Floss']) await panel.getByRole('button', { name }).click()
-  // Default Bubblegum Pop + 3 more = 4 picks, capped to 3 (oldest drops).
-  if ((await pressed(panel)) !== 3) fail(`expected 3 colors picked, got ${await pressed(panel)}`)
+  for (const name of ['Cotton Candy', 'Cherry Pop', 'Fairy Floss', 'Strawberry Milk']) await panel.getByRole('button', { name }).click()
+  // Default Bubblegum Pop + 4 more = 5 picks, capped to 4 (oldest drops).
+  if ((await pressed(panel)) !== 4) fail(`expected 4 colors picked, got ${await pressed(panel)}`)
   await check(page, profile, 'step1-colors')
   if (profile.mode === 'big') {
     await page.getByRole('tab', { name: 'Blues' }).click()
     await check(page, profile, 'step1-colors-blues')
   } else {
-    await page.getByRole('button', { name: 'More colors' }).click()
-    if (!(await panel.getByRole('button', { name: 'Peach Fuzz' }).isVisible())) fail('More colors did not show the next set')
+    await page.getByRole('button', { name: 'Next colors' }).click()
+    if (!(await panel.getByRole('button', { name: 'Peach Fuzz' }).isVisible())) fail('the next-page arrow did not show the next colors')
+    await page.getByRole('button', { name: 'Previous colors' }).click()
+    await page.getByRole('tab', { name: /Color page 5 of 5/ }).click()
+    if (!(await panel.getByRole('button', { name: 'Marshmallow' }).isVisible())) fail('the page overview did not jump to page 5')
+    if ((await page.getByRole('tab', { name: /Color page 5 of 5/ }).getAttribute('aria-selected')) !== 'true') fail('page indicator not on page 5')
   }
 
   await page.getByRole('tab', { name: 'Add-ons' }).click()
+  await panel.getByRole('button', { name: /Today's surprise/ }).click()
+  if ((await panel.getByRole('button', { name: /Today's surprise/ }).count()) !== 0) fail('the daily surprise did not unwrap')
   const addons = ['Beads', 'Glitter', 'Star Beads', 'Heart Beads', 'Cloud Puppy Beads', 'Bow Kitty Beads']
   for (const name of addons) await panel.getByRole('button', { name, exact: true }).click()
   if ((await pressed(panel)) !== 5) fail(`expected 5 add-ons picked, got ${await pressed(panel)}`)
@@ -219,6 +230,16 @@ async function stepThree(page, profile) {
   await check(page, profile, 'step3-full')
 }
 
+// Rewards can pop up after any save; tap "Yay!" until they're all seen.
+async function dismissCelebrations(page) {
+  const party = page.getByRole('alertdialog')
+  for (let i = 0; i < 10; i++) {
+    await page.waitForTimeout(300)
+    if (!(await party.count())) return
+    await party.getByRole('button', { name: 'Yay!' }).click()
+  }
+}
+
 function shelfOf(page) {
   return page.evaluate(() => JSON.parse(localStorage.getItem('thalia-squishies:v1')).shelf)
 }
@@ -251,10 +272,23 @@ async function stepFour(page, profile) {
 
   for (const name of ['Squish', 'Stretch', 'Poke', 'Shake']) await page.getByRole('button', { name, exact: true }).click()
 
+  // Make it a keychain (and the picture updates without errors).
+  await page.getByRole('button', { name: 'Keychain', exact: true }).click()
+  if ((await page.getByRole('button', { name: 'Keychain', exact: true }).getAttribute('aria-pressed')) !== 'true') fail('Keychain was not picked')
+  await page.waitForTimeout(1200)
+  await page.screenshot({ path: `${OUT}/${profile.name}--step4-keychain.png` })
+
   await page.getByRole('button', { name: 'Save to my Shelf' }).click()
   if ((await shelfOf(page)).length !== 1) fail('Save to my Shelf did not save')
+  // The first save earns a badge (and maybe unlocks): one celebration each.
+  const party = page.getByRole('alertdialog')
+  await party.waitFor({ timeout: 3000 }).catch(() => fail('no celebration for the first badge'))
+  if (!(await party.textContent()).includes('First Squishy!')) fail('the first celebration was not the First Squishy! badge')
+  await check(page, profile, 'step4-celebration')
+  await dismissCelebrations(page)
   if (!(await page.getByRole('button', { name: 'On my Shelf!' }).isVisible())) fail('saved state not shown')
 
+  await dismissCelebrations(page)
   await page.getByRole('button', { name: 'Rename my squishy' }).click()
   const dialog = page.getByRole('dialog')
   await dialog.waitFor()
@@ -274,6 +308,7 @@ async function stepFour(page, profile) {
   await dialog.waitFor({ state: 'detached' })
   if (!(await page.getByRole('heading', { name: expected }).isVisible())) fail(`name did not change to ${expected}`)
   if ((await shelfOf(page))[0]?.name !== expected) fail('renaming a saved squishy did not update the Shelf')
+  await dismissCelebrations(page)
   await check(page, profile, 'step4-saved')
 }
 
@@ -282,12 +317,55 @@ async function makeAnother(page, profile) {
   const fail = (msg) => problems.push(`[${profile.name} / make another] ${msg}`)
   await page.getByRole('button', { name: /make/i }).click()
   await page.getByRole('button', { name: 'Step 4: Play' }).click()
+  await dismissCelebrations(page)
   await page.getByRole('button', { name: 'Make another' }).click()
   await page.waitForTimeout(400)
   if (!(await page.getByRole('button', { name: 'Step 1: Filling' }).getAttribute('aria-current'))) fail('did not go back to Step 1')
   if ((await shelfOf(page)).length !== 1) fail('the shelf should still hold exactly the one saved squishy')
   const draft = await page.evaluate(() => JSON.parse(localStorage.getItem('thalia-squishies:v1')).maker.draft)
   if (draft.savedId || draft.name || draft.fill !== 0) fail('the new squishy did not start fresh')
+}
+
+// Shelf: stars on the title, play a saved squishy again, badges, delete with confirmation.
+async function shelfFlow(page, profile) {
+  const fail = (msg) => problems.push(`[${profile.name} / shelf] ${msg}`)
+  await dismissCelebrations(page)
+  const shelfButton = page.getByRole('button', { name: 'My Shelf', exact: true })
+  for (let i = 0; i < 20 && !(await shelfButton.isVisible()); i++) await page.goBack()
+  const stars = await page.evaluate(() => JSON.parse(localStorage.getItem('thalia-squishies:v1')).stars)
+  if (stars < 4) fail(`expected at least 4 stars after the first save, got ${stars}`)
+  if (!(await page.getByRole('img', { name: `${stars} stars` }).isVisible())) fail('stars not shown on the title screen')
+
+  await shelfButton.click()
+  await check(page, profile, 'shelf')
+  const cards = page.getByRole('button', { name: /^Play with / })
+  if ((await cards.count()) !== 1) fail(`expected 1 squishy on the shelf, got ${await cards.count()}`)
+
+  await cards.first().click()
+  await page.waitForTimeout(400)
+  if (!(await page.getByRole('button', { name: 'Step 4: Play' }).getAttribute('aria-current'))) fail('tapping a shelf squishy did not open it to play')
+  for (let i = 0; i < 4; i++) await page.goBack()
+  await page.waitForTimeout(300)
+
+  await page.getByRole('tab', { name: 'Badges' }).click()
+  if (!(await page.getByRole('listitem', { name: 'First Squishy!, earned' }).isVisible())) fail('First Squishy! badge not shown as earned')
+  await check(page, profile, 'shelf-badges')
+  await page.getByRole('tab', { name: 'Squishies' }).click()
+
+  const del = page.getByRole('button', { name: /^Delete / })
+  await del.click()
+  const confirm = page.getByRole('alertdialog')
+  await confirm.waitFor()
+  await check(page, profile, 'shelf-delete')
+  await confirm.getByRole('button', { name: 'Keep it' }).click()
+  if ((await cards.count()) !== 1) fail('Keep it should keep the squishy')
+  await del.click()
+  await confirm.getByRole('button', { name: 'Delete', exact: true }).click()
+  await page.waitForTimeout(300)
+  if ((await cards.count()) !== 0) fail('Delete did not remove the squishy')
+  if (!(await page.getByText('Make your first squishy!').isVisible())) fail('empty shelf message missing')
+  const after = await page.evaluate(() => JSON.parse(localStorage.getItem('thalia-squishies:v1')).stars)
+  if (after !== stars) fail('deleting a squishy changed the stars')
 }
 
 console.log(problems.length ? `\n${problems.length} problem(s):\n${problems.join('\n')}` : '\nAll checks passed.')

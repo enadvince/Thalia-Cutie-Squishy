@@ -25,7 +25,8 @@ npm run verify       # screenshots land in verify-out/
 
 ## Where things live
 
-- `src/data/*.js`: all game content: steps, modes, fillings (incl. play physics and sounds), add-ons, colors (100, generated from 10 families), sprays, scents, casing types, shapes, stickers, names (presets + typed-name allow-list). Add options here without touching components.
+- `src/data/*.js`: all game content: steps, modes, fillings (incl. play physics and sounds), add-ons, colors (100, generated from 10 families), sprays, scents, casing types, shapes (with `attach` points), accessories (keychain, bag clip…), stickers, names (presets + typed-name allow-list), badges.
+- `src/lib/speech.js`: read-aloud voice choice (clearest available) and `SAY_LIKE`, respellings for words speech engines mispronounce (e.g. Bead, Dough). Add options here without touching components.
 - `src/components/AddonArt.jsx`: the drawing for each add-on (an add-on's `art` key in `addons.js` points here).
 - `src/styles/tokens.css`: candy palette, M3 color roles, iOS roles, motion and size tokens.
 - `src/components/`: platform-adaptive chrome (`AppBar`, `Buttons`, `StepTabs`) and the `Mascot`.
@@ -38,7 +39,8 @@ npm run verify       # screenshots land in verify-out/
 - The squishy is drawn as SVG, then snapshotted into two pictures: the filling (underneath) and the casing (on top).
 - `src/lib/softbody.js` lays a 25×25 grid of springy points over those pictures. Fingers push and pull the points, and each point springs back to its rest spot. Squeezed areas shade darker, so dents read as dents.
 - `src/lib/glMesh.js` draws the pictures bent along the grid with WebGL. The add-ons float between the two layers, clipped to the squishy, so they can swirl when it's shaken.
-- How each filling feels and sounds (springiness, wobble, stretch, how much of a dent stays) lives in `src/data/fillings.js` under `physics` and `sounds`.
+- How each texture feels and sounds (springiness, wobble, stretch, how much of a dent stays) lives in `src/data/fillings.js` under `physics` and `sounds`.
+- The casing type changes the surface too (`play` in `src/data/casings.js`): Plastic shows pale stretch marks, Balloon bubbles up in a ring around a press, Gel holds dents and shapes, and Wax adds a coat that cracks and chips off (`src/lib/waxChips.js`).
 - Without WebGL it falls back to a simple whole-squishy squash.
 
 ## Adding a sticker
@@ -48,7 +50,14 @@ npm run verify       # screenshots land in verify-out/
    ```js
    { id: 'my-sticker', name: 'My Sticker', image: 'my-sticker.svg', unlock: 'starter' },
    ```
-   Use `unlock: { stars: 10 }` instead to show it as a locked silhouette ("Coming soon!") until 10 stars are earned (stars arrive in Phase 6).
+   Use `unlock: { stars: 10 }` instead to show it as a locked silhouette ("Coming soon!") until 10 stars are earned. Bonus add-ons in `addons.js` use the same `unlock` field.
+
+## Stars, badges and unlocks
+
+- **Stars:** +1 for each new squishy saved, +3 for each badge. Stars never go down, even if a squishy is deleted.
+- **Badges** (`src/data/badges.js`) reward exploring, never skill. Each has a `test` and a "Try:" hint shown until it's earned. `challenge: true` badges only appear in Big Maker.
+- **Unlocks:** anything with `unlock: { stars: N }` opens when she reaches N stars, with a celebration popup.
+- **Daily surprise:** `SURPRISE_ADDONS` in `addons.js`. One is picked from the date each day; add more by adding entries (and their art in `AddonArt.jsx`).
 
 ## Build phases
 
@@ -57,6 +66,6 @@ npm run verify       # screenshots land in verify-out/
 3. ✅ Step 2: casing, sprays, scents, locked stickers
 4. ✅ Step 3: fill interaction
 5. ✅ Step 4: play physics + sounds
-6. Shelf, stars, badges, unlocks, daily surprise
+6. ✅ Shelf, stars, badges, unlocks, daily surprise
 7. Guardrails, parent gate, PWA/offline, accessibility pass
 8. Higgsfield asset pass + polish

@@ -18,21 +18,42 @@ function spiralPath(cx, cy, offset) {
 
 const BIG_ART = new Set(['cloudPuppy', 'bowKitty', 'bunnyImp', 'pinkLamb', 'sunnyPup', 'pompom'])
 
+// How many add-on pieces float in a squishy in total, however many add-ons she picks.
+export const MAX_PIECES = 36
+const VARIATION = 0.05 // each add-on's share wobbles by up to ±5 percentage points
+
+// Splits 100% between the picked add-ons: an equal share each ± 5%, and the last one gets
+// whatever is left. Seeded by the combination, so the same picks always look the same.
+export function addonShares(addons) {
+  const n = addons.length
+  const rand = seeded(addons.join('|'))
+  const shares = []
+  let left = 1
+  for (let i = 0; i < n - 1; i++) {
+    const share = Math.min(Math.max(1 / n + (rand() * 2 - 1) * VARIATION, 0.02), left - 0.02 * (n - 1 - i))
+    shares.push(share)
+    left -= share
+  }
+  if (n) shares.push(left)
+  return shares
+}
+
 // Where each add-on piece floats inside `box` (stable for the same add-ons). Also used by Step 4's canvas.
 export function addonPieces(addons, box, scatterTop) {
   const bottom = box.y + box.h
-  return addons.flatMap((id) => {
+  const shares = addonShares(addons)
+  return addons.flatMap((id, k) => {
     const addon = addonById(id)
     if (!addon) return []
     const rand = seeded(id)
-    return Array.from({ length: addon.count }, (_, i) => ({
+    return Array.from({ length: Math.max(1, Math.round(shares[k] * MAX_PIECES)) }, (_, i) => ({
       key: `${id}-${i}`,
       art: addon.art,
       index: i,
       x: box.x + 22 + rand() * (box.w - 44),
       y: scatterTop + rand() * (bottom - scatterTop - 20),
       rot: rand() * 60 - 30,
-      scale: BIG_ART.has(addon.art) ? 1.5 : 1.2,
+      scale: BIG_ART.has(addon.art) ? 1.3 : 1.1,
       delay: rand() * 3,
     }))
   })
@@ -55,7 +76,11 @@ export default function FillingMass({ draft, box, top, center, scatterTop = top 
   const [turns, setTurns] = useState(0)
   useEffect(() => setTurns((t) => t + 1), [changeKey])
 
-  const spirals = useMemo(() => [spiralPath(cx, cy, 0), spiralPath(cx, cy, Math.PI)], [cx, cy])
+  // Up to 3 swirl ribbons over the base color (4 colors in all), evenly spaced around the spiral.
+  const spirals = useMemo(() => {
+    const n = Math.max(1, swirls.length)
+    return Array.from({ length: n }, (_, i) => spiralPath(cx, cy, (i * 2 * Math.PI) / n))
+  }, [cx, cy, swirls.length])
 
   const pieces = useMemo(() => addonPieces(draft.addons, box, scatterTop), [draft.addons, box, scatterTop])
 
@@ -94,6 +119,24 @@ export default function FillingMass({ draft, box, top, center, scatterTop = top 
         <pattern id={`${uid}-cream`} width="60" height="22" patternUnits="userSpaceOnUse">
           <path d="M0 11q15 -8 30 0t30 0" fill="none" stroke="#fff" strokeWidth="3" opacity="0.35" />
         </pattern>
+        <pattern id={`${uid}-flakes`} width="16" height="16" patternUnits="userSpaceOnUse">
+          <path d="M2 3l3-1 1 3-3 1zM10 9l4 1-1 3-3-1zM4 12l2-1 1 2-2 1z" fill="#fff8d6" opacity="0.75" />
+          <path d="M11 3l2 0 0 2z" fill="#8a6d00" opacity="0.2" />
+        </pattern>
+        <pattern id={`${uid}-foam`} width="18" height="18" patternUnits="userSpaceOnUse">
+          <rect width="18" height="18" fill="#fff" opacity="0.22" />
+          <circle cx="4" cy="5" r="3" fill="none" stroke="#fff" strokeWidth="1" opacity="0.6" />
+          <circle cx="13" cy="12" r="4" fill="none" stroke="#fff" strokeWidth="1" opacity="0.5" />
+          <circle cx="12" cy="3" r="1.5" fill="none" stroke="#fff" strokeWidth="0.8" opacity="0.6" />
+        </pattern>
+        <pattern id={`${uid}-sugar`} width="6" height="6" patternUnits="userSpaceOnUse">
+          <rect x="1" y="1" width="1.4" height="1.4" fill="#fff" opacity="0.7" />
+          <rect x="4" y="3.5" width="1.2" height="1.2" fill="#fff" opacity="0.55" />
+        </pattern>
+        <pattern id={`${uid}-wax`} width="80" height="30" patternUnits="userSpaceOnUse">
+          <rect width="80" height="30" fill="#fff" opacity="0.12" />
+          <path d="M0 18q20 -6 40 0t40 0" fill="none" stroke="#fff" strokeWidth="6" opacity="0.18" />
+        </pattern>
         <pattern id={`${uid}-folds`} width="50" height="40" patternUnits="userSpaceOnUse">
           <path d="M5 30q20 -26 40 0" fill="none" stroke="#fff" strokeWidth="2.5" opacity="0.35" />
         </pattern>
@@ -114,7 +157,7 @@ export default function FillingMass({ draft, box, top, center, scatterTop = top 
                 fill="none"
                 stroke={c ? c.hex : '#fff'}
                 strokeOpacity={c ? 0.95 : 0.3}
-                strokeWidth="15"
+                strokeWidth={swirls.length >= 3 ? 11 : 15}
                 strokeLinecap="round"
               />
             ))}
