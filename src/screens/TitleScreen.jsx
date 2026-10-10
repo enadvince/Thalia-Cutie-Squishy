@@ -5,6 +5,7 @@ import { IconButton } from '../components/Buttons'
 import { PrimaryButton } from '../components/Buttons'
 import { useGame } from '../state/GameContext'
 import Icon from '../components/Icon'
+import Backdrop from '../components/Backdrop'
 
 export default function TitleScreen({ onPlay, onRandom, onShelf, onGrownUps }) {
   const reduce = useReducedMotion()
@@ -12,11 +13,12 @@ export default function TitleScreen({ onPlay, onRandom, onShelf, onGrownUps }) {
 
   return (
     <main
-      className="flex min-h-dvh flex-col
+      className="relative isolate flex min-h-dvh flex-col
         px-[max(var(--gutter),env(safe-area-inset-left))]
         pt-[max(1rem,env(safe-area-inset-top))]
         pb-[max(1.5rem,env(safe-area-inset-bottom))]"
     >
+      <Backdrop />
       <div className="flex items-center justify-between gap-3">
         <span
           role="img"

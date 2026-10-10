@@ -15,6 +15,12 @@ export const STICKERS = [
   { id: 'cactus-cutie', name: 'Cactus Cutie', image: 'cactus-cutie.svg', unlock: 'starter' },
   { id: 'whale-wave', name: 'Whale Wave', image: 'whale-wave.svg', unlock: 'starter' },
   { id: 'mystery-circle', name: 'Mystery Sticker', image: 'mystery-circle.svg', unlock: { stars: 5 } },
+  { id: 'sleepy-cloud', name: 'Sleepy Cloud', image: 'sleepy-cloud.svg', unlock: { stars: 8 } },
+  { id: 'jelly-bear', name: 'Jelly Bear', image: 'jelly-bear.svg', unlock: { stars: 12 } },
+  { id: 'cupcake-kitty', name: 'Cupcake Kitty', image: 'cupcake-kitty.svg', unlock: { stars: 16 } },
+  { id: 'rainbow-snail', name: 'Rainbow Snail', image: 'rainbow-snail.svg', unlock: { stars: 20 } },
+  { id: 'bubble-fish', name: 'Bubble Fish', image: 'bubble-fish.svg', unlock: { stars: 25 } },
+  { id: 'crystal-heart', name: 'Crystal Heart', image: 'crystal-heart.svg', unlock: { stars: 30 } },
 ]
 
 export const stickerSrc = (sticker) => `${import.meta.env.BASE_URL}assets/stickers/${sticker.image}`

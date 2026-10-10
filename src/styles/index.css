@@ -189,3 +189,16 @@
 .fill-bubble {
   animation: fill-bubble 0.7s ease-out infinite;
 }
+
+/* Title backdrop: bubbles drifting up, very slowly. Off when the OS asks for reduced motion. */
+@keyframes backdrop-rise {
+  from { transform: translateY(0) scale(0.8); opacity: 0; }
+  15% { opacity: 1; }
+  to { transform: translateY(-110vh) scale(1.1); opacity: 0; }
+}
+.backdrop-bubble {
+  animation: backdrop-rise 14s linear infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .backdrop-bubble { animation: none; opacity: 0; }
+}
