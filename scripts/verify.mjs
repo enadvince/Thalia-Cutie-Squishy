@@ -101,17 +101,22 @@ async function stepOne(page, profile) {
   await panel.getByRole('button', { name: 'Crunchy' }).click()
   if ((await pressed(panel)) !== 1) fail('filling type is not single-select')
 
+  if ((await panel.getByRole('button').count()) < 12) fail('expected 12 textures')
   await page.getByRole('tab', { name: 'Colors' }).click()
-  for (const name of ['Cotton Candy', 'Cherry Pop', 'Fairy Floss']) await panel.getByRole('button', { name }).click()
-  // Default Bubblegum Pop + 3 more = 4 picks, capped to 3 (oldest drops).
-  if ((await pressed(panel)) !== 3) fail(`expected 3 colors picked, got ${await pressed(panel)}`)
+  for (const name of ['Cotton Candy', 'Cherry Pop', 'Fairy Floss', 'Strawberry Milk']) await panel.getByRole('button', { name }).click()
+  // Default Bubblegum Pop + 4 more = 5 picks, capped to 4 (oldest drops).
+  if ((await pressed(panel)) !== 4) fail(`expected 4 colors picked, got ${await pressed(panel)}`)
   await check(page, profile, 'step1-colors')
   if (profile.mode === 'big') {
     await page.getByRole('tab', { name: 'Blues' }).click()
     await check(page, profile, 'step1-colors-blues')
   } else {
-    await page.getByRole('button', { name: 'More colors' }).click()
-    if (!(await panel.getByRole('button', { name: 'Peach Fuzz' }).isVisible())) fail('More colors did not show the next set')
+    await page.getByRole('button', { name: 'Next colors' }).click()
+    if (!(await panel.getByRole('button', { name: 'Peach Fuzz' }).isVisible())) fail('the next-page arrow did not show the next colors')
+    await page.getByRole('button', { name: 'Previous colors' }).click()
+    await page.getByRole('tab', { name: /Color page 5 of 5/ }).click()
+    if (!(await panel.getByRole('button', { name: 'Marshmallow' }).isVisible())) fail('the page overview did not jump to page 5')
+    if ((await page.getByRole('tab', { name: /Color page 5 of 5/ }).getAttribute('aria-selected')) !== 'true') fail('page indicator not on page 5')
   }
 
   await page.getByRole('tab', { name: 'Add-ons' }).click()

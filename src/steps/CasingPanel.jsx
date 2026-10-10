@@ -127,6 +127,7 @@ function TypeThumb({ type, color }) {
           <rect key={i} x={i * 7} y="0" width="3.5" height="40" fill={['#a98bff', '#4fd1c5', '#ff7eb6'][i % 3]} />
         ))}
         <rect width="40" height="40" fill={color} opacity={type.opacity} />
+        {type.wax && <rect width="40" height="40" fill="#fff7ea" opacity="0.8" />}
         <ellipse cx="13" cy="11" rx="6" ry="2.6" fill="#fff" opacity={type.gloss * 0.8} transform="rotate(-30 13 11)" />
       </g>
       <circle cx="20" cy="20" r="17" fill="none" stroke="#3b2a4a" strokeOpacity="0.2" strokeWidth="1" />

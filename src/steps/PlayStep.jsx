@@ -4,9 +4,11 @@ import { useGame } from '../state/GameContext'
 import { fillingById } from '../data/fillings'
 import { PRESET_NAMES, MAX_NAME_LENGTH, isAllowedName, tidyName, squishyName } from '../data/names'
 import { SoftBody } from '../lib/softbody'
+import { makeChips, hitChips, shakeChips, updateChips, chipQuads } from '../lib/waxChips'
+import { casingTypeById, playPhysics } from '../data/casings'
 import { createRenderer } from '../lib/glMesh'
 import { svgToImage } from '../lib/snapshot'
-import { playNamed, jingle, sparkle } from '../lib/audio'
+import { playNamed, jingle, sparkle, crackle, click } from '../lib/audio'
 import { speak } from '../lib/speech'
 import { tick } from '../lib/haptics'
 import { bouncy } from '../lib/motion'
@@ -21,6 +23,7 @@ import Sheet from '../components/Sheet'
 import Icon from '../components/Icon'
 
 const GRID = 24 // soft-body grid resolution
+const REPEATING = new Set(['crackle', 'click']) // sounds that repeat while dragging
 const TEXTURE_SIZE = 1024
 
 const PlayContext = createContext(null)
@@ -30,36 +33,47 @@ const usePlay = () => useContext(PlayContext)
 export function PlayProvider({ children }) {
   const { draft } = useGame().state.maker
   const filling = fillingById(draft.fillingType)
+  const casing = casingTypeById(draft.casingType)
+  const bodyKey = `${filling.id}/${casing.id}`
   const bodyRef = useRef(null)
-  if (bodyRef.current?.fillingId !== filling.id) {
-    bodyRef.current = new SoftBody(GRID, filling.physics)
-    bodyRef.current.fillingId = filling.id
+  if (bodyRef.current?.key !== bodyKey) {
+    // How it plays = the texture's physics + the casing type's surface behavior.
+    bodyRef.current = new SoftBody(GRID, playPhysics(filling.physics, casing))
+    bodyRef.current.key = bodyKey
   }
   const body = bodyRef.current
   const swirl = useRef(0) // how hard the add-ons are swirling (shake)
+  const ripple = useRef(null) // set by the stage: shows a ripple at (x, y) in squishy coordinates
+  const wax = useRef(null) // set by the stage for Wax casings: { hit(x, y), shake() }
   const sound = (kind, amount) => playNamed(filling.sounds[kind], amount)
 
   // The play buttons act out the same gestures a finger would.
   const actions = {
     squish: () => {
+      wax.current?.hit(0.5, 0.55)
       body.grab('button', 0.5, 0.55)
       sound('press', 0.3)
       tick()
       setTimeout(() => body.release('button') && sound('release'), 650)
     },
     stretch: () => {
+      wax.current?.hit(0.78, 0.55)
       body.grab('button', 0.75, 0.55)
       body.move('button', 0.75 + filling.physics.stretch, 0.55)
       sound('stretch', 1)
       setTimeout(() => body.release('button') && sound('release'), 650)
     },
     poke: () => {
-      body.poke(0.4 + Math.random() * 0.2, 0.45 + Math.random() * 0.2, 12)
+      const [x, y] = [0.4 + Math.random() * 0.2, 0.45 + Math.random() * 0.2]
+      body.tap(x, y)
+      ripple.current?.(x, y)
+      wax.current?.hit(x, y)
       sound('press', 0.3)
       tick()
     },
     shake: () => {
       body.shake(1.3)
+      wax.current?.shake()
       swirl.current = 1
       sound('release')
       tick()
@@ -86,7 +100,7 @@ export function PlayProvider({ children }) {
     return () => window.removeEventListener('devicemotion', onMotion)
   }, [])
 
-  return <PlayContext.Provider value={{ body, filling, swirl, sound, actions }}>{children}</PlayContext.Provider>
+  return <PlayContext.Provider value={{ body, filling, swirl, sound, actions, ripple, wax }}>{children}</PlayContext.Provider>
 }
 
 // Add-on pieces drift back home, and swirl around the middle while `swirl` is high.
@@ -120,7 +134,17 @@ function quadsFor(particles, body) {
 
 // The squishy on a soft-body canvas: press, stretch, poke, pinch (two fingers), with per-filling feel.
 export function PlayStage({ draft }) {
-  const { body, swirl, sound, filling } = usePlay()
+  const { body, swirl, sound, filling, ripple, wax } = usePlay()
+  const [ripples, setRipples] = useState([])
+  // A soft ring where a tap lands (squishy coordinates → pixels in the stage box).
+  ripple.current = (x, y) => {
+    const box = boxRef.current?.getBoundingClientRect()
+    if (!box) return
+    const side = Math.min(box.width, box.height)
+    const id = performance.now()
+    setRipples((r) => [...r.slice(-3), { id, left: box.width / 2 + (x - 0.5) * side, top: box.height / 2 + (y - 0.5) * side }])
+    setTimeout(() => setRipples((r) => r.filter((p) => p.id !== id)), 600)
+  }
   const boxRef = useRef(null)
   const canvasRef = useRef(null)
   const [size, setSize] = useState(0)
@@ -150,10 +174,22 @@ export function PlayStage({ draft }) {
     let raf
     let alive = true
     ;(async () => {
-      const [inner, casing] = await Promise.all([
+      const waxy = casingTypeById(look.casingType).wax
+      const [inner, casing, coat] = await Promise.all([
         svgToImage(<SquishyView draft={look} fill={fill} still layer="inner" />, TEXTURE_SIZE),
         svgToImage(<SquishyView draft={look} fill={fill} still layer="casing" />, TEXTURE_SIZE),
+        waxy && svgToImage(<SquishyView draft={look} fill={fill} still layer="wax" />, TEXTURE_SIZE),
       ])
+      // Wax casing: the coat as chips that crack and fall off as she plays.
+      const chips = waxy ? makeChips() : null
+      const waxSound = (result) => {
+        if (result === 'break') crackle()
+        else if (result === 'crack') click()
+      }
+      wax.current = chips && {
+        hit: (x, y) => waxSound(hitChips(chips, x, y)),
+        shake: () => waxSound(shakeChips(chips)),
+      }
       // Add-ons float as separate pieces so they can swirl when shaken.
       const { scaleX, scaleY } = inflation(fill)
       const particles = addonPieces(look.addons, FILL_BOX, FILL_BOX.y + 24).map((p) => {
@@ -188,6 +224,7 @@ export function PlayStage({ draft }) {
       if (!alive) return
       renderer.setTexture('inner', inner)
       renderer.setTexture('casing', casing)
+      if (coat) renderer.setTexture('wax', coat)
       ;[...art.keys()].forEach((key, i) => renderer.setTexture(key, sprites[i]))
       setMode('gl')
 
@@ -205,12 +242,14 @@ export function PlayStage({ draft }) {
         }
         body.step(dt)
         updateParticles(particles, swirl, dt)
+        if (chips) updateChips(chips, dt)
         renderer.clear()
         renderer.drawMesh('inner', body)
         renderer.maskFrom('inner', body)
         for (const [key, quads] of quadsFor(particles, body)) renderer.drawQuads(key, quads)
         renderer.unmask()
         renderer.drawMesh('casing', body)
+        if (chips) renderer.drawQuads('wax', chipQuads(chips, body))
         raf = requestAnimationFrame(frame)
       }
       raf = requestAnimationFrame(frame)
@@ -218,6 +257,7 @@ export function PlayStage({ draft }) {
     return () => {
       alive = false
       cancelAnimationFrame(raf)
+      wax.current = null
     }
     // Rebuild the textures only when the squishy's look changes (not on rename or save).
   }, [lookKey, body])
@@ -232,6 +272,7 @@ export function PlayStage({ draft }) {
     e.currentTarget.setPointerCapture(e.pointerId)
     const [x, y] = point(e)
     body.grab(e.pointerId, x, y)
+    wax.current?.hit(x, y)
     fingers.current.set(e.pointerId, { stretched: false, lastSound: 0 })
     setPressed(true)
     sound('press', 0.2)
@@ -244,8 +285,8 @@ export function PlayStage({ draft }) {
     body.move(e.pointerId, x, y)
     const g = body.grabs.get(e.pointerId)
     const now = performance.now()
-    // Crunchy keeps crackling as you move; other fillings make one stretch sound.
-    if (g?.moved && (!f.stretched || (filling.sounds.stretch === 'crackle' && now - f.lastSound > 160))) {
+    // Crunchy and Clicker keep crackling/clicking as you move; other fillings make one stretch sound.
+    if (g?.moved && (!f.stretched || (REPEATING.has(filling.sounds.stretch) && now - f.lastSound > 160))) {
       f.stretched = true
       f.lastSound = now
       sound('stretch', Math.min(1, Math.hypot(x - g.x0, y - g.y0) * 4))
@@ -253,7 +294,9 @@ export function PlayStage({ draft }) {
   }
   const up = (e) => {
     if (!fingers.current.delete(e.pointerId)) return
+    const [x, y] = point(e)
     const kind = body.release(e.pointerId)
+    if (kind === 'poke') ripple.current(x, y)
     if (fingers.current.size === 0) setPressed(false)
     sound(kind === 'poke' ? 'press' : 'release', 0.4)
   }
@@ -280,6 +323,17 @@ export function PlayStage({ draft }) {
         onPointerCancel={up}
         className={`absolute inset-0 size-full touch-none select-none ${mode === 'gl' ? '' : 'opacity-0'}`}
       />
+      {ripples.map((r) => (
+        <motion.span
+          key={r.id}
+          aria-hidden="true"
+          initial={{ scale: 0.2, opacity: 0.7 }}
+          animate={{ scale: 1.6, opacity: 0 }}
+          transition={{ duration: 0.55, ease: 'easeOut' }}
+          className="pointer-events-none absolute size-16 rounded-full border-4 border-pink-300"
+          style={{ left: r.left - 32, top: r.top - 32 }}
+        />
+      ))}
       <div
         aria-hidden="true"
         className="pointer-events-none absolute top-1/2 left-1/2"

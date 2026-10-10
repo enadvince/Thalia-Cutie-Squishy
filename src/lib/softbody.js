@@ -27,6 +27,7 @@ export class SoftBody {
     this.pos = Float32Array.from(this.home)
     this.vel = new Float32Array(count * 2)
     this.shade = new Float32Array(count).fill(1)
+    this.stress = new Float32Array(count) // pale stretch marks (plastic), fading over time
     this.grabs = new Map()
     this.restArea = 1 / (n * n)
   }
@@ -82,7 +83,7 @@ export class SoftBody {
       }
     }
     if (!g.moved && g.age < 0.2) {
-      this.poke(g.x, g.y)
+      this.tap(g.x, g.y)
       return 'poke'
     }
     return g.moved ? 'stretch' : 'press'
@@ -94,6 +95,15 @@ export class SoftBody {
     for (let v = 0; v < w.length; v++) {
       this.vel[v * 2] += (x - this.pos[v * 2]) * w[v] * strength
       this.vel[v * 2 + 1] += (y - this.pos[v * 2 + 1]) * w[v] * strength
+    }
+  }
+
+  // A quick tap: a dimple where the finger landed plus a little whole-body squash-bounce.
+  tap(x, y) {
+    this.poke(x, y, 18)
+    for (let v = 0; v < this.vel.length / 2; v++) {
+      this.vel[v * 2] += (this.home[v * 2] - 0.5) * 0.9
+      this.vel[v * 2 + 1] += (FLOOR - this.home[v * 2 + 1]) * 1.3
     }
   }
 
@@ -140,7 +150,16 @@ export class SoftBody {
         const squash = depth * SQUASH
         const spread = axis ? FLOOR + (restV - FLOOR) * (1 - squash) : 0.5 + (restV - 0.5) * (1 + squash * 0.8)
         const p = axis ? g.y : g.x
-        return { goal: spread + g.dent[v] * (p - restV) * depth * 1.6, weight: 1 }
+        let goal = spread + g.dent[v] * (p - restV) * depth * 1.6
+        if (this.physics.bulge) {
+          // Balloon: a ring of surface bubbles up around the finger, growing the longer you hold.
+          const rx = this.rest[v * 2] - g.x
+          const ry = this.rest[v * 2 + 1] - g.y
+          const d = Math.hypot(rx, ry) || 1e-6
+          const ring = Math.exp(-((d - 0.14) ** 2) / (2 * 0.035 ** 2))
+          goal += ((axis ? ry : rx) / d) * ring * this.physics.bulge * Math.min(1, g.age / 1.2)
+        }
+        return { goal, weight: 1 }
       }
     }
     return weight > 0.002 ? { goal: sum / weight, weight: Math.min(1, weight) } : null
@@ -162,6 +181,10 @@ export class SoftBody {
           this.pos[i] += this.vel[i] * SUBSTEP
         }
       }
+    }
+    if (this.physics.stress) {
+      const fade = Math.exp(-dt / 1.8)
+      for (let v = 0; v < this.stress.length; v++) this.stress[v] *= fade
     }
     this.updateShade()
   }
@@ -186,7 +209,15 @@ export class SoftBody {
         }
       }
     }
-    for (let v = 0; v < this.shade.length; v++) this.shade[v] /= counts[v]
+    for (let v = 0; v < this.shade.length; v++) {
+      this.shade[v] /= counts[v]
+      if (this.physics.stress) {
+        // Plastic: stretched spots go pale and fade back slowly.
+        const stretched = Math.max(0, (this.shade[v] - 1) / 0.08) // 0–1 from the stretch shading
+        this.stress[v] = Math.max(this.stress[v], stretched)
+        this.shade[v] += this.stress[v] * 0.35
+      }
+    }
   }
 
   // Where a point of the original picture (u, v in 0–1) is now, following the bent grid.

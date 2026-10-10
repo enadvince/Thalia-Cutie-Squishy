@@ -217,9 +217,75 @@ export function squeak(amount = 0.5) {
   osc.stop(t + 0.22)
 }
 
+// Crisp plastic clicks (Clicker): a couple of short bright ticks.
+export function click() {
+  if (muted) return
+  const ac = audio()
+  const t = ac.currentTime
+  ;[0, 0.045].forEach((d, i) => {
+    const osc = ac.createOscillator()
+    const gain = ac.createGain()
+    const start = t + d + Math.random() * 0.01
+    osc.type = 'square'
+    osc.frequency.setValueAtTime(2400 - i * 500 + Math.random() * 300, start)
+    gain.gain.setValueAtTime(0.0001, start)
+    gain.gain.exponentialRampToValueAtTime(0.25, start + 0.002)
+    gain.gain.exponentialRampToValueAtTime(0.0001, start + 0.025)
+    osc.connect(gain).connect(master)
+    osc.start(start)
+    osc.stop(start + 0.03)
+  })
+}
+
+// Soft, airy whipped-cream "shff" with tiny bubbles (Liquid Foam).
+export function cream() {
+  if (muted) return
+  const ac = audio()
+  const t = ac.currentTime
+  const src = ac.createBufferSource()
+  src.buffer = noiseBuffer(ac)
+  const filter = ac.createBiquadFilter()
+  filter.type = 'bandpass'
+  filter.Q.value = 1.2
+  filter.frequency.setValueAtTime(1800, t)
+  filter.frequency.linearRampToValueAtTime(900, t + 0.25)
+  const gain = ac.createGain()
+  gain.gain.setValueAtTime(0.0001, t)
+  gain.gain.exponentialRampToValueAtTime(0.45, t + 0.05)
+  gain.gain.exponentialRampToValueAtTime(0.0001, t + 0.28)
+  src.connect(filter).connect(gain).connect(master)
+  src.start(t)
+  src.stop(t + 0.3)
+  for (let i = 0; i < 3; i++) setTimeout(() => gloop(0.9), 40 + i * 70)
+}
+
+// A low waxy creak (Wax): a slow wobbly tone.
+export function creak() {
+  if (muted) return
+  const ac = audio()
+  const t = ac.currentTime
+  const osc = ac.createOscillator()
+  const filter = ac.createBiquadFilter()
+  const gain = ac.createGain()
+  osc.type = 'sawtooth'
+  osc.frequency.setValueAtTime(110, t)
+  osc.frequency.linearRampToValueAtTime(150, t + 0.25)
+  filter.type = 'lowpass'
+  filter.frequency.value = 600
+  gain.gain.setValueAtTime(0.0001, t)
+  gain.gain.exponentialRampToValueAtTime(0.25, t + 0.04)
+  gain.gain.exponentialRampToValueAtTime(0.0001, t + 0.3)
+  osc.connect(filter).connect(gain).connect(master)
+  osc.start(t)
+  osc.stop(t + 0.32)
+}
+
 // Plays a named sound from a filling's `sounds` config.
 const NAMED = {
   crackle,
+  click,
+  cream,
+  creak,
   swish,
   thud,
   squelch: (amount) => squelch(amount),

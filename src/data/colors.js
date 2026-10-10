@@ -1,6 +1,6 @@
 // 100 colors, generated from 10 families × 10 shades. Names are listed light → dark.
 // Each family has an icon so a swatch is never identified by color alone.
-export const MAX_FILLING_COLORS = 3
+export const MAX_FILLING_COLORS = 4
 
 const FAMILIES = [
   { id: 'pinks', name: 'Pinks', icon: 'heart', hue: 330, sat: 85,

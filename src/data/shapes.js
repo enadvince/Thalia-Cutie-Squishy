@@ -2,7 +2,7 @@
 //   { c: [cx, cy, r] }                   circle
 //   { e: [cx, cy, rx, ry, rotate?] }     ellipse
 //   { r: [x, y, w, h, radius] }          rounded rect
-//   { d: 'svg path' }                    path
+//   { d: 'svg path' }                    path (add evenodd: true for holes, like a donut)
 // face: where the cute face goes ({ x, y, s: scale, pixel?: square eyes }), or null.
 // decor: extra details drawn on top (see ShapeDecor in SquishyView.jsx).
 // attach: where a keychain / clip / necklace connects (top of the shape).
@@ -81,6 +81,21 @@ export const SHAPES = [
       { e: [70, 150, 20, 32, -30] }, { e: [190, 150, 20, 32, 30] }, { c: [94, 222, 26] }, { c: [166, 222, 26] },
     ],
     face: { x: 130, y: 82, s: 0.62 },
+  },
+  {
+    id: 'diamond', attach: [130, 40], name: 'Diamond',
+    parts: [{ d: 'M72 40H188L236 98L130 232L24 98Z' }],
+    face: { x: 130, y: 126, s: 0.75 }, decor: 'facets',
+  },
+  {
+    id: 'donut', attach: [130, 38], name: 'Donut',
+    parts: [{ d: 'M28 140a102 102 0 1 0 204 0a102 102 0 1 0 -204 0ZM96 140a34 34 0 1 0 68 0a34 34 0 1 0 -68 0Z', evenodd: true }],
+    face: { x: 130, y: 207, s: 0.55 }, decor: 'icing',
+  },
+  {
+    id: 'boba', attach: [130, 52], name: 'Boba',
+    parts: [{ d: 'M66 96H194L181 234Q179 246 167 246H93Q81 246 79 234Z' }, { r: [56, 78, 148, 24, 12] }, { d: 'M68 82Q130 22 192 82Z' }],
+    face: { x: 130, y: 156, s: 0.8 }, decor: 'boba',
   },
 ]
 

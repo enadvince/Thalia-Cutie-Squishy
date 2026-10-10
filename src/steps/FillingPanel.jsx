@@ -16,8 +16,8 @@ import Icon from '../components/Icon'
 import LockedCard from '../components/LockedCard'
 
 export const FILLING_SECTIONS = [
-  { id: 'type', label: 'Type', icon: 'drip', instruction: 'Pick your filling!' },
-  { id: 'colors', label: 'Colors', icon: 'palette', instruction: 'Pick up to 3 colors!' },
+  { id: 'type', label: 'Texture', icon: 'drip', instruction: 'Pick your texture!' },
+  { id: 'colors', label: 'Colors', icon: 'palette', instruction: 'Pick up to 4 colors!' },
   { id: 'addons', label: 'Add-ons', icon: 'bead', instruction: 'Add fun bits!' },
 ]
 
@@ -186,28 +186,47 @@ function ColorPicker({ mode, picked, onPick }) {
   const [family, setFamily] = useState('all') // Big Maker: family tab
 
   if (mode === 'little') {
+    const go = (d) => {
+      pop(0.9)
+      setSet((p) => (p + d + LITTLE_SETS.length) % LITTLE_SETS.length)
+    }
     return (
-      <div className="flex flex-col gap-4">
-        {LITTLE_SETS[set].map((fam) => (
-          <FamilyGrid key={fam.id} family={fam} picked={picked} onPick={onPick} />
-        ))}
-        <button
-          type="button"
-          onClick={() => {
-            pop(0.9)
-            setSet((s) => (s + 1) % LITTLE_SETS.length)
-          }}
-          className="flex min-h-16 items-center justify-center gap-3 rounded-full bg-lilac-300 px-6
-            font-display text-[length:var(--text-title)] font-semibold text-ink shadow-[var(--shadow-candy)]"
-        >
-          <Icon name="palette" size={30} />
-          More colors
-          <span aria-hidden="true" className="flex gap-1">
-            {LITTLE_SETS.map((_, i) => (
-              <span key={i} className={`size-2.5 rounded-full ${i === set ? 'bg-ink' : 'bg-ink/25'}`} />
+      <div className="flex flex-col gap-3">
+        <div className="flex gap-1">
+          <PageArrow dir={-1} onClick={() => go(-1)} />
+          <div className="flex min-w-0 flex-1 flex-col gap-4">
+            {LITTLE_SETS[set].map((fam) => (
+              <FamilyGrid key={fam.id} family={fam} picked={picked} onPick={onPick} />
             ))}
-          </span>
-        </button>
+          </div>
+          <PageArrow dir={1} onClick={() => go(1)} />
+        </div>
+        {/* Every page as a little cluster of its colors; the ringed one is the page you're on. */}
+        <div role="tablist" aria-label="Color pages" className="flex flex-wrap justify-center gap-2">
+          {LITTLE_SETS.map((pair, i) => (
+            <button
+              key={i}
+              type="button"
+              role="tab"
+              aria-selected={i === set}
+              aria-label={`Color page ${i + 1} of ${LITTLE_SETS.length}: ${pair.map((f) => f.name).join(' and ')}`}
+              onClick={() => {
+                pop(1.1)
+                setSet(i)
+              }}
+              className={`relative grid min-h-[56px] min-w-[56px] grid-cols-5 place-content-center gap-[2px] rounded-xl p-1.5 ${
+                i === set ? 'bg-white ring-[3px] ring-ink' : 'bg-white/60'
+              }`}
+            >
+              {pair
+                .flatMap((f) => f.colors)
+                .map((c) => (
+                  <span key={c.id} className="size-[7px] rounded-full" style={{ background: c.hex }} />
+                ))}
+              {i === set && <span aria-hidden="true" className="absolute -bottom-2.5 left-1/2 size-2 -translate-x-1/2 rounded-full bg-ink" />}
+            </button>
+          ))}
+        </div>
       </div>
     )
   }
@@ -234,6 +253,22 @@ function ColorPicker({ mode, picked, onPick }) {
       {shown.map((fam) => (
         <FamilyGrid key={fam.id} family={fam} picked={picked} onPick={onPick} />
       ))}
+    </div>
+  )
+}
+
+// Big side arrows for flipping color pages; they stay in view while the colors scroll.
+function PageArrow({ dir, onClick }) {
+  return (
+    <div className="shrink-0">
+      <button
+        type="button"
+        aria-label={dir < 0 ? 'Previous colors' : 'Next colors'}
+        onClick={onClick}
+        className="sticky top-16 grid h-24 w-14 place-items-center rounded-2xl bg-lilac-300 text-ink shadow-[var(--shadow-candy)]"
+      >
+        <Icon name={dir < 0 ? 'chevronBack' : 'chevronNext'} size={32} />
+      </button>
     </div>
   )
 }

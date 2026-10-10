@@ -174,3 +174,18 @@
 .drip {
   animation: drip 0.4s ease-in infinite;
 }
+
+/* Bubbles floating up off the FILL! button while it's held. */
+@keyframes fill-bubble {
+  from {
+    translate: 0 0;
+    opacity: 0.9;
+  }
+  to {
+    translate: 0 -46px;
+    opacity: 0;
+  }
+}
+.fill-bubble {
+  animation: fill-bubble 0.7s ease-out infinite;
+}

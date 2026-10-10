@@ -159,19 +159,38 @@ export function FillPanel() {
   const { fill, pouring, start, stop } = useFill()
   const full = fill >= 1
   const extra = fill > 1.02
+  const buttonRef = useRef(null)
+  const [presses, setPresses] = useState(0)
+
+  // Long press must keep filling: block the phone's own long-press actions (text selection,
+  // callout menu, fake mouse events) with a non-passive touchstart. Pointer events still fire.
+  useEffect(() => {
+    const el = buttonRef.current
+    const block = (e) => e.preventDefault()
+    el.addEventListener('touchstart', block, { passive: false })
+    return () => el.removeEventListener('touchstart', block)
+  }, [])
 
   const isKey = (e) => e.key === ' ' || e.key === 'Enter'
+  const begin = () => {
+    setPresses((n) => n + 1)
+    start()
+  }
 
   return (
     <div className="flex flex-col items-center gap-4 py-2">
       <motion.button
+        ref={buttonRef}
         type="button"
         aria-label="Fill! Hold to fill your squishy"
-        animate={{ scale: pouring ? 0.93 : 1 }}
-        transition={{ type: 'spring', stiffness: 500, damping: 15 }}
+        animate={
+          pouring
+            ? { scaleX: [0.97, 1.03, 0.97], scaleY: [0.9, 0.95, 0.9], transition: { duration: 0.45, repeat: Infinity } }
+            : { scaleX: 1, scaleY: 1, transition: { type: 'spring', stiffness: 500, damping: 9 } }
+        }
         onPointerDown={(e) => {
           e.currentTarget.setPointerCapture(e.pointerId)
-          start()
+          begin()
         }}
         onPointerUp={stop}
         onPointerCancel={stop}
@@ -179,17 +198,38 @@ export function FillPanel() {
         onKeyDown={(e) => {
           if (isKey(e) && !e.repeat) {
             e.preventDefault()
-            start()
+            begin()
           }
         }}
         onKeyUp={(e) => isKey(e) && stop()}
         onContextMenu={(e) => e.preventDefault()}
         style={{ WebkitTouchCallout: 'none' }}
-        className={`flex min-h-28 w-full max-w-sm touch-none items-center justify-center gap-3 rounded-[2rem] px-6
-          font-display text-[2.25rem] font-bold text-ink shadow-[var(--shadow-candy)] select-none ${pouring ? 'bg-pink-500' : 'bg-pink-300'}`}
+        className={`relative flex aspect-square w-[min(11rem,62vw)] shrink-0 touch-none items-center justify-center rounded-full
+          font-display text-[2.25rem] font-bold text-ink shadow-[var(--shadow-candy)] ring-8 ring-white/70 select-none
+          ${pouring ? 'bg-pink-500' : 'bg-pink-300'}`}
       >
-        <Icon name="bag" size={44} />
-        FILL!
+        {/* Each press replays this squish-bounce (keyed on the press count). */}
+        <motion.span
+          key={presses}
+          initial={presses ? { scaleX: 1.15, scaleY: 0.8 } : false}
+          animate={{ scaleX: 1, scaleY: 1 }}
+          transition={{ type: 'spring', stiffness: 600, damping: 8 }}
+          className="flex flex-col items-center leading-none"
+        >
+          <Icon name="bag" size={48} />
+          FILL!
+        </motion.span>
+        {pouring && (
+          <span aria-hidden="true" className="pointer-events-none absolute inset-x-0 top-2 h-0">
+            {[18, 34, 50, 66, 82].map((left, i) => (
+              <span
+                key={left}
+                className="fill-bubble absolute size-3 rounded-full bg-white/80 ring-2 ring-pink-300"
+                style={{ left: `${left}%`, animationDelay: `${i * 0.12}s` }}
+              />
+            ))}
+          </span>
+        )}
       </motion.button>
 
       <div className="flex w-full max-w-sm items-center gap-3">

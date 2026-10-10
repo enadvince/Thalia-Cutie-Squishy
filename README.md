@@ -39,7 +39,8 @@ npm run verify       # screenshots land in verify-out/
 - The squishy is drawn as SVG, then snapshotted into two pictures: the filling (underneath) and the casing (on top).
 - `src/lib/softbody.js` lays a 25×25 grid of springy points over those pictures. Fingers push and pull the points, and each point springs back to its rest spot. Squeezed areas shade darker, so dents read as dents.
 - `src/lib/glMesh.js` draws the pictures bent along the grid with WebGL. The add-ons float between the two layers, clipped to the squishy, so they can swirl when it's shaken.
-- How each filling feels and sounds (springiness, wobble, stretch, how much of a dent stays) lives in `src/data/fillings.js` under `physics` and `sounds`.
+- How each texture feels and sounds (springiness, wobble, stretch, how much of a dent stays) lives in `src/data/fillings.js` under `physics` and `sounds`.
+- The casing type changes the surface too (`play` in `src/data/casings.js`): Plastic shows pale stretch marks, Balloon bubbles up in a ring around a press, Gel holds dents and shapes, and Wax adds a coat that cracks and chips off (`src/lib/waxChips.js`).
 - Without WebGL it falls back to a simple whole-squishy squash.
 
 ## Adding a sticker
