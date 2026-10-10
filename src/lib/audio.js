@@ -5,12 +5,13 @@ const MAX_VOLUME = 0.35
 let ctx = null
 let master = null
 let muted = false
+let volume = 1
 
 function audio() {
   if (!ctx) {
     ctx = new (window.AudioContext || window.webkitAudioContext)()
     master = ctx.createGain()
-    master.gain.value = MAX_VOLUME
+    master.gain.value = MAX_VOLUME * volume
     master.connect(ctx.destination)
   }
   if (ctx.state === 'suspended') ctx.resume()
@@ -19,6 +20,12 @@ function audio() {
 
 export function setMuted(value) {
   muted = value
+}
+
+// Grown-up volume setting: 0–1 of MAX_VOLUME, so the cap can never be exceeded.
+export function setVolume(value) {
+  volume = Math.max(0, Math.min(1, value))
+  if (master) master.gain.value = MAX_VOLUME * volume
 }
 
 // A soft bubbly "pop": a quick downward pitch sweep.

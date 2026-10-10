@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <!-- App icon (placeholder until the Phase 8 art pass): the mascot on a pastel background.
+       Kept inside the middle 80% so it also works as a maskable icon. -->
+  <defs>
+    <radialGradient id="bg" cx="50%" cy="35%" r="80%"><stop offset="0" stop-color="#FFF4FA"/><stop offset="1" stop-color="#E5D9FF"/></radialGradient>
+    <radialGradient id="jelly" cx="40%" cy="35%" r="75%"><stop offset="0" stop-color="#FFE4F1"/><stop offset=".55" stop-color="#FFB3D6"/><stop offset="1" stop-color="#FF7EB6"/></radialGradient>
+  </defs>
+  <rect width="512" height="512" fill="url(#bg)"/>
+  <g transform="translate(256 270) scale(1.25) translate(-128 -130)">
+    <ellipse cx="128" cy="222" rx="92" ry="11" fill="#A3245F" opacity=".12"/>
+    <path d="M24 160C24 88 70 30 128 30s104 58 104 130c0 40-46 60-104 60S24 200 24 160z" fill="url(#jelly)"/>
+    <ellipse cx="86" cy="72" rx="30" ry="13" fill="#fff" opacity=".75" transform="rotate(-28 86 72)"/>
+    <circle cx="122" cy="52" r="6" fill="#fff" opacity=".8"/>
+    <ellipse cx="94" cy="142" rx="15" ry="18" fill="#3B2A4A"/><ellipse cx="162" cy="142" rx="15" ry="18" fill="#3B2A4A"/>
+    <circle cx="99" cy="134" r="6" fill="#fff"/><circle cx="167" cy="134" r="6" fill="#fff"/>
+    <ellipse cx="66" cy="168" rx="15" ry="8" fill="#FF7EB6" opacity=".55"/><ellipse cx="190" cy="168" rx="15" ry="8" fill="#FF7EB6" opacity=".55"/>
+    <path d="M118 166q10 10 20 0" fill="none" stroke="#3B2A4A" stroke-width="5" stroke-linecap="round"/>
+  </g>
+</svg>

@@ -9,9 +9,19 @@ npm install
 npm run dev          # open the URL on a phone/tablet on the same Wi-Fi with: npm run dev -- --host
 ```
 
-Testing switches (URL only, until the parent gate arrives in Phase 7):
-- `?platform=ios` or `?platform=android` forces a platform's look
-- `?mode=big` or `?mode=little` picks Big Maker or Little Maker
+Testing switch: `?platform=ios` or `?platform=android` forces a platform's look.
+
+## Grown-ups
+
+Tap **Grown-ups** (bottom of the title screen), hold the button for 3 seconds, then answer the multiplication question (it's written in words, and a new one appears after a wrong answer). Settings:
+- **Maker mode:** Little Maker (4–6) or Big Maker (7–10). Switching also applies that mode's read-aloud and playtime defaults.
+- **Sound:** read-aloud on/off and volume (the top of the slider is still the gentle built-in cap; mute is always on screen).
+- **Playtime reminder:** off or 10–60 minutes (default 15 for Little Maker, 20 for Big Maker). Time counts only while the app is on screen and starts over after a 30-minute break. The "Your squishies need a nap!" screen can only be dismissed through the parent gate (+10 minutes).
+- **Reset all data:** erases squishies, stars and badges after a confirmation. Settings stay.
+
+## Install and offline
+
+It's an installable web app (Add to Home Screen on iPhone/iPad, Install on Android). After the first visit it works with no internet: `scripts/offline.js` writes a service worker at build time that precaches every file. App icons are rendered from `public/icons/icon.svg` with `node scripts/make-icons.mjs`.
 
 ## Verify a phase
 
@@ -21,7 +31,7 @@ npx vite preview --port 4173 &
 npm run verify       # screenshots land in verify-out/
 ```
 
-`verify` renders every screen on iPhone, Pixel, iPad (landscape) and Android-tablet (landscape) profiles, at 200% text, and with reduced motion. It fails on: undersized touch targets, unnamed controls, text under 16px, horizontal scrolling, axe WCAG AA violations, page errors, or system back not returning to the title.
+`verify` renders every screen on iPhone, Pixel, iPad (landscape) and Android-tablet (landscape) profiles, at 200% text, and with reduced motion. It fails on: undersized touch targets, unnamed controls, text under 16px, horizontal scrolling, axe WCAG AA violations, page errors, or system back not returning to the title. It also walks the parent gate (short hold and a wrong answer are refused), Settings, Reset all data, the nap screen, and an offline reload.
 
 ## Where things live
 
@@ -69,5 +79,5 @@ npm run verify       # screenshots land in verify-out/
 4. ✅ Step 3: fill interaction
 5. ✅ Step 4: play physics + sounds
 6. ✅ Shelf, stars, badges, unlocks, daily surprise
-7. Guardrails, parent gate, PWA/offline, accessibility pass
+7. ✅ Guardrails, parent gate, PWA/offline, accessibility pass
 8. Higgsfield asset pass + polish

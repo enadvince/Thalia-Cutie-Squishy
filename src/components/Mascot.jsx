@@ -9,14 +9,16 @@ const GLITTER = [
   [75, 160, '#A98BFF'], [190, 118, '#fff'], [128, 140, '#FFD84D'], [172, 178, '#fff'],
 ]
 
-// The wobbling squishy mascot. Tap to squish it.
-export default function Mascot({ size = 240 }) {
+// The wobbling squishy mascot. Tap to squish it. `sleeping`: eyes closed, slow breathing, little z's.
+export default function Mascot({ size = 240, sleeping = false }) {
   const reduce = useReducedMotion()
   const [squish, setSquish] = useState(0)
 
   const idle = reduce
     ? {}
-    : {
+    : sleeping
+      ? { scaleX: [1, 1.03, 1], scaleY: [1, 0.96, 1], transition: { duration: 4, repeat: Infinity, ease: 'easeInOut' } }
+      : {
         scaleX: [1, 1.04, 0.98, 1.02, 1],
         scaleY: [1, 0.96, 1.03, 0.98, 1],
         transition: { duration: 2.6, repeat: Infinity, ease: 'easeInOut' },
@@ -25,7 +27,7 @@ export default function Mascot({ size = 240 }) {
   return (
     <motion.button
       type="button"
-      aria-label="Squishy friend. Tap to squish!"
+      aria-label={sleeping ? 'Sleepy squishy friend' : 'Squishy friend. Tap to squish!'}
       onClick={() => {
         pop(0.8)
         setSquish((n) => n + 1)
@@ -94,12 +96,21 @@ export default function Mascot({ size = 240 }) {
 
           {/* face */}
           <g>
-            <ellipse cx="94" cy="142" rx="15" ry="18" fill="#3B2A4A" />
-            <ellipse cx="162" cy="142" rx="15" ry="18" fill="#3B2A4A" />
-            <circle cx="99" cy="134" r="6" fill="#fff" />
-            <circle cx="167" cy="134" r="6" fill="#fff" />
-            <circle cx="89" cy="150" r="2.6" fill="#fff" />
-            <circle cx="157" cy="150" r="2.6" fill="#fff" />
+            {sleeping ? (
+              <>
+                <path d="M80 144q14 12 28 0M148 144q14 12 28 0" fill="none" stroke="#3B2A4A" strokeWidth="5" strokeLinecap="round" />
+                <path d="M196 40h18l-18 20h18M222 14h12l-12 14h12" fill="none" stroke="#A98BFF" strokeWidth="5" strokeLinecap="round" strokeLinejoin="round" />
+              </>
+            ) : (
+              <>
+                <ellipse cx="94" cy="142" rx="15" ry="18" fill="#3B2A4A" />
+                <ellipse cx="162" cy="142" rx="15" ry="18" fill="#3B2A4A" />
+                <circle cx="99" cy="134" r="6" fill="#fff" />
+                <circle cx="167" cy="134" r="6" fill="#fff" />
+                <circle cx="89" cy="150" r="2.6" fill="#fff" />
+                <circle cx="157" cy="150" r="2.6" fill="#fff" />
+              </>
+            )}
             <ellipse cx="66" cy="168" rx="15" ry="8" fill="#FF7EB6" opacity="0.55" />
             <ellipse cx="190" cy="168" rx="15" ry="8" fill="#FF7EB6" opacity="0.55" />
             <path d="M118 166q10 10 20 0" fill="none" stroke="#3B2A4A" strokeWidth="5" strokeLinecap="round" />
