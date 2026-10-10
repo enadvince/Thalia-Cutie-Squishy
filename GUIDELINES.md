@@ -14,7 +14,7 @@ Legend: ✅ verified · 🔜 lands in a later phase (phase number) · 🤖 check
 | T2 | Body text ≥ 18px, labels ≥ 16px at default scale | 🤖 font-size check on all text |
 | T3 | Contrast WCAG AA (4.5:1 text, 3:1 large text/UI) | 🤖 axe `wcag2aa` |
 | T4 | Every control has a VoiceOver/TalkBack name | 🤖 accessible-name check + axe |
-| T5 | Color is never the only signal (icon + name on every option) | Manual review per screen |
+| T5 | Color is never the only signal (icon + name on every option) | Manual review: every swatch has its family icon + name; picked = ring + check badge |
 | T6 | Instructions under 6 words; no reading needed to progress | `src/data/steps.js` review; icons on every step |
 | T7 | Text scaling to 200% doesn't break layouts | 🤖 `*-text200` profiles: no horizontal scroll, all targets intact |
 | T8 | Safe areas respected; no controls in system gesture zones | `env(safe-area-inset-*)` on bars; 24px side gutter keeps controls out of Android edge-back zones; bottom bar sits above home indicator/gesture bar |
@@ -35,7 +35,8 @@ Legend: ✅ verified · 🔜 lands in a later phase (phase number) · 🤖 check
 | P4 | UI font: SF Pro (`-apple-system`) | UI font: Roboto | ✅ `--chrome-font` |
 | P5 | Dynamic Type (`font: -apple-system-body` drives rem) | Font scale (rem follows browser text size) | ✅ |
 | P6 | Motion: springs | M3 easing/duration tokens | ✅ `lib/motion.js`, `tokens.css` |
-| P7 | Pickers in sheets | Pickers in bottom sheets | 🔜 2–3 |
+| P7 | Pickers in a sheet-style panel (1.75rem top corners, material blur) | Pickers in an M3 standard (non-modal) bottom sheet surface (28dp top corners, surface-container) | ✅ Step 1 · 🔜 Step 2 |
+| P11 | Section switch: HIG segmented control (grey track, white thumb) | M3 segmented buttons (outlined, check on selected) | ✅ `SegmentedControl.jsx` |
 | P8 | Alerts per HIG | M3 dialogs | 🔜 6–7 |
 | P9 | Haptics: light only (Safari has no vibrate API, so it's a no-op) | Light `vibrate(10)` tick, never continuous | ✅ step advance · 🔜 5 |
 | P10 | Color: candy palette mapped to M3 color roles ("dynamic color" tokens) | | ✅ `tokens.css` |
@@ -55,3 +56,4 @@ Legend: ✅ verified · 🔜 lands in a later phase (phase number) · 🤖 check
 | Phase | Screens | Result |
 |---|---|---|
 | 1 | Title, Maker shell (4 steps) | ✅ `npm run verify`: 7 profiles × 5 screens with no problems. Manual screenshot review done. |
+| 2 | Step 1: Type / Colors / Add-ons + live jar, Little & Big Maker | ✅ `npm run verify`: 9 profiles (adds Big Maker iPhone + iPad) with no problems; Step 1 flow checks pass (single-select type, 3-color cap, 5-add-on cap, More colors, family tabs, Undo). Manual review fixed: phone overflow, truncated segment labels, jar overflowing its card, invisible tiny add-on thumbnails. |
