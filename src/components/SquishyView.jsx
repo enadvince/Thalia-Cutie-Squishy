@@ -3,7 +3,7 @@ import { motion, useReducedMotion } from 'framer-motion'
 import { shapeById } from '../data/shapes'
 import { casingTypeById } from '../data/casings'
 import { sprayById } from '../data/sprays'
-import { scentById, SCENT_TINT_AMOUNT } from '../data/scents'
+import { scentLook, SCENT_TINT_AMOUNT } from '../data/scents'
 import { stickerById, stickerSrc, FIRST_STARTER } from '../data/stickers'
 import { colorById } from '../data/colors'
 import { mix } from '../lib/color'
@@ -17,7 +17,7 @@ const INK = '#3b2a4a'
 // Casing color: a light version of her first filling color, with the scent's tint blended in.
 export function casingColor(draft) {
   const base = mix(colorById(draft.fillingColors[0]).hex, '#ffffff', 0.55)
-  return mix(base, scentById(draft.scent).tint, SCENT_TINT_AMOUNT)
+  return mix(base, scentLook(draft).tint, SCENT_TINT_AMOUNT)
 }
 
 // Draws a shape's parts (circles, ellipses, rects, paths) with the given props.
@@ -107,6 +107,14 @@ function ShapeDecor({ decor, color }) {
           ))}
         </g>
       )
+    case 'sugarCoat':
+      return (
+        <g fill="#fff" opacity="0.75">
+          {[[70, 120, 20], [100, 86, -15], [150, 78, 30], [182, 112, -25], [60, 180, 10], [204, 176, 35], [118, 120, 45], [160, 132, -40], [96, 210, 5], [170, 208, -20], [130, 66, 0], [84, 150, 60], [190, 146, 15]].map(([x, y, r], i) => (
+            <rect key={i} x={x - 3} y={y - 3} width="6" height="6" rx="1" transform={`rotate(${r} ${x} ${y})`} />
+          ))}
+        </g>
+      )
     case 'whiskers':
       return <path d="M60 166H28M62 178L32 188M200 166H232M198 178L228 188" {...line} />
     default:
@@ -189,6 +197,52 @@ export function Accessory({ kind, at }) {
   }
 }
 
+// Where the printed words go: a shape's own `label` spot, else just under its face.
+export function labelSpot(shape) {
+  if (shape.label) return shape.label
+  const f = shape.face ?? { x: 130, y: 110, s: 1 }
+  return [f.x, f.y + 50 * f.s, 150]
+}
+
+// Words printed on the casing. Sized to fit the spot; the shape's clip trims anything past the edge,
+// and in Play it's part of the casing picture, so it bends with the squishy like real print.
+function PrintedLabel({ text, spot }) {
+  const [x, y, width, max = 30] = spot
+  const size = Math.min(max, width / (text.length * 0.6))
+  return (
+    <text
+      x={x}
+      y={y}
+      textAnchor="middle"
+      dominantBaseline="central"
+      fontFamily="Fredoka, 'Arial Rounded MT Bold', 'Trebuchet MS', sans-serif"
+      fontWeight="700"
+      fontSize={size.toFixed(1)}
+      fill={INK}
+      fillOpacity="0.78"
+      stroke="#fff"
+      strokeOpacity="0.85"
+      strokeWidth={(size * 0.16).toFixed(1)}
+      strokeLinejoin="round"
+      paintOrder="stroke"
+    >
+      {text}
+    </text>
+  )
+}
+
+// Bubble Wrap: a honeycomb of little bubbles over the whole picture (viewBox units).
+export const BUBBLE_R = 9
+export const BUBBLES = (() => {
+  const out = []
+  const dx = 22
+  const dy = 19
+  for (let row = 0, y = -12; y < 262; row++, y += dy) {
+    for (let x = -6 + (row % 2) * (dx / 2); x < 272; x += dx) out.push([x, y])
+  }
+  return out
+})()
+
 // Area the filling occupies inside any shape (the shape's clip trims it).
 export const FILL_BOX = { x: 20, y: 22, w: 220, h: 228 }
 
@@ -204,19 +258,21 @@ export function inflation(fill) {
 // are counters that play a happy jiggle / sparkle burst each time they go up.
 // For Step 4's soft-body canvas, `still` renders without animation and `layer` picks one part:
 //   'all' (default) · 'inner' (filling, no add-ons) · 'casing' (everything over the filling, minus a
-//   wax coat) · 'wax' (just the wax coat, which Play breaks into chips) · 'scent'
+//   wax coat or bubbles) · 'wax' (just the wax coat, which Play breaks into chips) · 'bubbles' (just
+//   the bubble-wrap bubbles, which Play pops) · 'scent'
 export default function SquishyView({ draft, fill, jiggle = 0, burst = 0, still = false, layer = 'all' }) {
   const uid = safeId(useId())
   const shape = shapeById(draft.shape)
   const type = casingTypeById(draft.casingType)
   const spray = sprayById(draft.spray)
-  const scent = scentById(draft.scent)
+  const scent = scentLook(draft)
   const color = casingColor(draft)
   const sticker = stickerById(draft.sticker) ?? FIRST_STARTER
   const showInner = layer === 'all' || layer === 'inner'
   const showCasing = layer === 'all' || layer === 'casing'
   const showScent = layer === 'all' || layer === 'scent'
   const showWax = type.wax && (layer === 'all' || layer === 'wax')
+  const showBubbles = type.bubbles && (layer === 'all' || layer === 'bubbles')
 
   // A happy wobble on every change.
   const changeKey = JSON.stringify(draft)
@@ -245,7 +301,7 @@ export default function SquishyView({ draft, fill, jiggle = 0, burst = 0, still 
       viewBox="-10 -20 280 280"
       className="size-full overflow-visible"
       role="img"
-      aria-label={`${shape.name} squishy with ${type.name.toLowerCase()} casing, ${spray.name.toLowerCase()} and ${scent.name.toLowerCase()} scent`}
+      aria-label={`${shape.name} squishy with ${type.name.toLowerCase()} casing, ${spray.name.toLowerCase()} and ${scent.name.toLowerCase()} scent${draft.label ? `, printed with “${draft.label}”` : ''}`}
     >
       <defs>
         <clipPath id={`${uid}-shape`}>
@@ -279,7 +335,7 @@ export default function SquishyView({ draft, fill, jiggle = 0, burst = 0, still 
       {/* floor shadow */}
       {layer === 'all' && <ellipse cx="130" cy="240" rx="88" ry="10" fill="#a3245f" opacity="0.12" />}
 
-      {(showInner || showCasing || showWax) && (
+      {(showInner || showCasing || showWax || showBubbles) && (
         <motion.g initial={false} animate={shape3} transition={{ type: 'spring', stiffness: 220, damping: 14 }} style={origin}>
           <motion.g
             key={`jiggle-${jiggle}`}
@@ -346,6 +402,13 @@ export default function SquishyView({ draft, fill, jiggle = 0, burst = 0, still 
                       ),
                     )}
 
+                    {/* bubble wrap: each bubble leaves a flat, crinkly ring once popped */}
+                    {type.bubbles &&
+                      BUBBLES.map(([x, y], i) => (
+                        <circle key={i} cx={x} cy={y} r={BUBBLE_R - 1} fill="none" stroke="#fff" strokeWidth="1.2" opacity="0.45" />
+                      ))}
+                    {draft.label && <PrintedLabel text={draft.label} spot={labelSpot(shape)} />}
+
                     <rect x="-10" y="-20" width="280" height="280" fill={`url(#${uid}-depth)`} />
                     {/* gloss highlights: plastic is shiniest, balloon is softer */}
                     <ellipse cx="88" cy="74" rx="38" ry="15" fill="#fff" opacity={type.gloss * 0.7} transform="rotate(-28 88 74)" />
@@ -371,6 +434,17 @@ export default function SquishyView({ draft, fill, jiggle = 0, burst = 0, still 
                   <ellipse cx="92" cy="80" rx="34" ry="12" fill="#fff" opacity="0.35" transform="rotate(-28 92 80)" />
                 </g>
               )}
+              {showBubbles && (
+                <g clipPath={clip}>
+                  {BUBBLES.map(([x, y], i) => (
+                    <g key={i}>
+                      <circle cx={x} cy={y} r={BUBBLE_R} fill="#fff" opacity="0.28" stroke="#fff" strokeOpacity="0.7" strokeWidth="1" />
+                      <circle cx={x} cy={y + 2} r={BUBBLE_R - 2} fill={INK} opacity="0.05" />
+                      <circle cx={x - 3} cy={y - 3} r="2.4" fill="#fff" opacity="0.9" />
+                    </g>
+                  ))}
+                </g>
+              )}
             </motion.g>
           </motion.g>
         </motion.g>
@@ -384,7 +458,7 @@ export default function SquishyView({ draft, fill, jiggle = 0, burst = 0, still 
           <g key={`${scent.id}-${i}`} transform={`translate(${x} ${y})`}>
             <g className="scent-rise" style={{ animationDelay: `${i * 0.7}s` }}>
               <g transform="scale(1.3)">
-                <ScentArt particle={scent.particle} />
+                <ScentArt particle={scent.particle} color={scent.color} />
               </g>
             </g>
           </g>

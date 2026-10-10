@@ -3,6 +3,7 @@ import { MODES } from '../data/modes'
 import { setMuted } from '../lib/audio'
 import { rewardsAfterSave, EMPTY_EXPLORED } from '../lib/rewards'
 import { squishyName } from '../data/names'
+import { randomDraft } from '../lib/randomize'
 
 // All state lives here and autosaves to localStorage. Nothing leaves the device.
 const STORAGE_KEY = 'thalia-squishies:v1'
@@ -16,6 +17,8 @@ export const DEFAULT_DRAFT = {
   spray: 'glitter',
   sticker: null,
   scent: 'bubble-gum',
+  sodaFlavor: null, // when the scent is Soda
+  label: null, // words printed on the casing
   casingType: 'gel',
   shape: 'dumpling',
   fill: 0,
@@ -95,6 +98,11 @@ function reducer(state, action) {
       if (!entry) return state
       const before = maker.past.length && !maker.draft.savedId ? saveDraft(state) : state
       return { ...before, maker: { step: 3, furthest: 3, draft: entry.draft, past: [] } }
+    }
+    case 'randomSquishy': {
+      // A surprise squishy, ready to play. A half-made squishy is saved first so nothing is lost.
+      const before = maker.past.length && !maker.draft.savedId ? saveDraft(state) : state
+      return { ...before, maker: { step: 3, furthest: 3, draft: randomDraft(DEFAULT_DRAFT, before.stars), past: [] } }
     }
     case 'deleteSquishy': {
       const draft = maker.draft.savedId === action.id ? { ...maker.draft, savedId: null } : maker.draft

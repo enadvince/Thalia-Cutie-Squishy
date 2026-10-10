@@ -4,9 +4,10 @@ import { pop } from '../lib/audio'
 import { speak } from '../lib/speech'
 import Icon from './Icon'
 
-// Something that unlocks with stars: a silhouette, a lock, "Coming soon!" and how many stars it needs.
+// Something that unlocks with stars: a big question mark (it's a surprise!), a lock,
+// "Coming soon!" and how many stars it needs.
 // Tapping it just wiggles (never an error).
-export default function LockedCard({ name, stars, children }) {
+export default function LockedCard({ name, stars }) {
   const { readAloud, muted } = useGame().state.settings
   const wiggle = useAnimationControls()
   return (
@@ -26,7 +27,9 @@ export default function LockedCard({ name, stars, children }) {
       <span className="absolute -top-1.5 -right-1.5 grid size-8 place-items-center rounded-full bg-lilac-300 text-ink shadow">
         <Icon name="lock" size={18} />
       </span>
-      <span className="grid size-16 place-items-center opacity-25 brightness-0">{children}</span>
+      <span aria-hidden="true" className="grid size-16 place-items-center rounded-full bg-lilac-100 font-display text-[2.75rem] leading-none font-bold text-lilac-700">
+        ?
+      </span>
       <span className="text-[length:var(--text-label)] leading-tight font-extrabold text-ink">Coming soon!</span>
       <span className="flex items-center gap-1 text-[length:var(--text-label)] font-extrabold text-ink-soft">
         <Icon name="star" size={18} filled /> {stars}

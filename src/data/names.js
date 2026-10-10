@@ -22,6 +22,7 @@ pony horse deer hedgehog koala sloth otter turtle snail jelly jellyfish octopus 
 lilac lavender aqua teal mint gold golden silver white rosy peachy pastel the of and my mister miss lady sir queen
 king prince princess captain doctor professor best friend buddy pal love lovely heart hearts hug hugs kiss boop
 bop zoom zip pip pom pompom poppy pickles button buttons pebble snuggle snuggles cuddle cuddles nap nappy noodle
+me you i am is a so too hi hello yay wow cool fun play smile smiley kind squish yummy hooray bestie sparkle
 `
 
 export const ALLOWED_WORDS = new Set([
@@ -31,9 +32,9 @@ export const ALLOWED_WORDS = new Set([
 
 export const MAX_NAME_LENGTH = 20
 
-export function isAllowedName(text) {
+export function isAllowedName(text, max = MAX_NAME_LENGTH) {
   const name = text.trim().replace(/\s+/g, ' ')
-  if (!name || name.length > MAX_NAME_LENGTH || !/^[A-Za-z ]+$/.test(name)) return false
+  if (!name || name.length > max || !/^[A-Za-z ]+$/.test(name)) return false
   return name.split(' ').every((w) => ALLOWED_WORDS.has(w.toLowerCase()))
 }
 
@@ -49,3 +50,11 @@ export const tidyName = (text) =>
 // A squishy's name: the one she picked, or an automatic one like "Bubblegum Pop Kitty".
 export const squishyName = (draft) =>
   draft.name ?? `${colorById(draft.fillingColors[0]).name} ${shapeById(draft.shape).name}`
+
+// Words printed on the casing (Step 2). Typed words go through the same allow-list as names.
+export const MAX_LABEL_LENGTH = 14
+export const LABEL_PRESETS = [
+  'Cutie', 'Squishy', 'Love', 'Hug Me', 'Best Friend', 'Sweet', 'Happy', 'Boop',
+  'Sparkle', 'Thalia', 'Yummy', 'So Soft', 'Hello', 'Squish Me', 'Sunny', 'Bestie',
+]
+export const isAllowedLabel = (text) => isAllowedName(text, MAX_LABEL_LENGTH)

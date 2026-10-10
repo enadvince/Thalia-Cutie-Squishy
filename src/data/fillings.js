@@ -9,13 +9,13 @@ export const FILLINGS = [
     id: 'clicker', name: 'Clicker', icon: 'click', pitch: 1.4,
     texture: { gloss: 0.3, pattern: 'beads' },
     physics: { k: 90, damping: 12, stretch: 0.14, press: 0.32, plasticity: 0 },
-    sounds: { press: 'click', stretch: 'click', release: 'click' },
+    sounds: { press: 'crackle', stretch: 'crackle', release: 'crackle' },
   },
   {
     id: 'crunchy', name: 'Crunchy', icon: 'crunch', pitch: 1.35,
     texture: { gloss: 0.2, pattern: 'flakes' },
     physics: { k: 80, damping: 13, stretch: 0.16, press: 0.34, plasticity: 0.15 },
-    sounds: { press: 'crackle', stretch: 'crackle', release: 'crackle' },
+    sounds: { press: 'crunch', stretch: 'crunch', release: 'crunch' },
   },
   {
     id: 'slow-rising', name: 'Slow Rising', icon: 'rise', pitch: 0.7,
@@ -76,6 +76,13 @@ export const FILLINGS = [
     texture: { gloss: 0.35, pattern: 'wax' },
     physics: { k: 95, damping: 20, stretch: 0.1, press: 0.2, plasticity: 0.4 },
     sounds: { press: 'thud', stretch: 'creak', release: 'thud' },
+  },
+  {
+    // Little water-filled gel beads (generic name; no brand names).
+    id: 'water-beads', name: 'Water Beads', icon: 'orbs', pitch: 1.25,
+    texture: { gloss: 0.9, pattern: 'orbs' },
+    physics: { k: 42, damping: 5, stretch: 0.3, press: 0.4, plasticity: 0 },
+    sounds: { press: 'plip', stretch: 'plip', release: 'plip' },
   },
 ]
 
