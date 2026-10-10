@@ -1,3 +1,6 @@
+import { colorById } from './colors'
+import { shapeById } from './shapes'
+
 // Squishy names. Little Maker picks from PRESET_NAMES; Big Maker can also type a name,
 // which is only accepted if every word is in ALLOWED_WORDS (an allow-list, not a block-list).
 export const PRESET_NAMES = [
@@ -42,3 +45,7 @@ export const tidyName = (text) =>
     .split(' ')
     .map((w) => w[0].toUpperCase() + w.slice(1).toLowerCase())
     .join(' ')
+
+// A squishy's name: the one she picked, or an automatic one like "Bubblegum Pop Kitty".
+export const squishyName = (draft) =>
+  draft.name ?? `${colorById(draft.fillingColors[0]).name} ${shapeById(draft.shape).name}`

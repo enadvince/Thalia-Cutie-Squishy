@@ -3,7 +3,7 @@
 // To add a sticker: drop an image (SVG or PNG, square, transparent background) into
 // public/assets/stickers/ and add an entry below. That's it — no component changes.
 //   unlock: 'starter'      → available from the start
-//   unlock: { stars: N }   → shown as a locked silhouette ("Coming soon!") until N stars are earned (Phase 6)
+//   unlock: { stars: N }   → shown as a locked silhouette ("Coming soon!") until N stars are earned
 export const STICKERS = [
   { id: 'strawberry-smile', name: 'Strawberry Smile', image: 'strawberry-smile.svg', unlock: 'starter' },
   { id: 'rainbow-cloud', name: 'Rainbow Cloud', image: 'rainbow-cloud.svg', unlock: 'starter' },
@@ -19,7 +19,6 @@ export const STICKERS = [
 
 export const stickerSrc = (sticker) => `${import.meta.env.BASE_URL}assets/stickers/${sticker.image}`
 
-// Stars arrive in Phase 6; until then only starters are unlocked.
 export const isStickerUnlocked = (sticker, stars = 0) =>
   sticker.unlock === 'starter' || stars >= sticker.unlock.stars
 

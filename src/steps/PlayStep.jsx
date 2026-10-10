@@ -2,9 +2,7 @@ import { createContext, useContext, useEffect, useRef, useState } from 'react'
 import { motion } from 'framer-motion'
 import { useGame } from '../state/GameContext'
 import { fillingById } from '../data/fillings'
-import { colorById } from '../data/colors'
-import { shapeById } from '../data/shapes'
-import { PRESET_NAMES, MAX_NAME_LENGTH, isAllowedName, tidyName } from '../data/names'
+import { PRESET_NAMES, MAX_NAME_LENGTH, isAllowedName, tidyName, squishyName } from '../data/names'
 import { SoftBody } from '../lib/softbody'
 import { createRenderer } from '../lib/glMesh'
 import { svgToImage } from '../lib/snapshot'
@@ -21,9 +19,6 @@ import Icon from '../components/Icon'
 
 const GRID = 24 // soft-body grid resolution
 const TEXTURE_SIZE = 1024
-
-export const squishyName = (draft) =>
-  draft.name ?? `${colorById(draft.fillingColors[0]).name} ${shapeById(draft.shape).name}`
 
 const PlayContext = createContext(null)
 const usePlay = () => useContext(PlayContext)
@@ -313,7 +308,7 @@ export function PlayPanel({ onGoToStep }) {
   const say = (text) => readAloud && !muted && speak(text)
 
   const save = () => {
-    dispatch({ type: 'saveSquishy', name })
+    dispatch({ type: 'saveSquishy' })
     jingle()
     sparkle()
     say('Saved to your shelf!')
@@ -321,12 +316,12 @@ export function PlayPanel({ onGoToStep }) {
 
   const rename = (newName) => {
     dispatch({ type: 'updateDraft', patch: { name: newName } })
-    if (draft.savedId) dispatch({ type: 'saveSquishy', name: newName })
+    if (draft.savedId) dispatch({ type: 'saveSquishy' })
     say(newName)
   }
 
   const makeAnother = () => {
-    if (!saved) dispatch({ type: 'saveSquishy', name }) // nothing is ever lost
+    if (!saved) dispatch({ type: 'saveSquishy' }) // nothing is ever lost
     dispatch({ type: 'newSquishy' })
     onGoToStep(0)
   }

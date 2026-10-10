@@ -2,9 +2,12 @@ import { motion, useReducedMotion } from 'framer-motion'
 import Mascot from '../components/Mascot'
 import { MuteToggle } from '../components/AppBar'
 import { PrimaryButton } from '../components/Buttons'
+import { useGame } from '../state/GameContext'
+import Icon from '../components/Icon'
 
-export default function TitleScreen({ onPlay }) {
+export default function TitleScreen({ onPlay, onShelf }) {
   const reduce = useReducedMotion()
+  const { stars } = useGame().state
 
   return (
     <main
@@ -13,7 +16,16 @@ export default function TitleScreen({ onPlay }) {
         pt-[max(1rem,env(safe-area-inset-top))]
         pb-[max(1.5rem,env(safe-area-inset-bottom))]"
     >
-      <div className="flex justify-end">
+      <div className="flex items-center justify-between gap-3">
+        <span
+          role="img"
+          aria-label={`${stars} stars`}
+          className="flex min-h-12 items-center gap-2 rounded-full bg-white/80 px-4 font-display text-[length:var(--text-title)]
+            font-semibold text-ink shadow-[var(--shadow-soft)]"
+        >
+          <Icon name="star" size={26} filled className="text-[#8a6d00]" />
+          {stars}
+        </span>
         <MuteToggle />
       </div>
 
@@ -36,6 +48,14 @@ export default function TitleScreen({ onPlay }) {
           <PrimaryButton icon="play" onClick={onPlay}>
             Let’s make!
           </PrimaryButton>
+          <button
+            type="button"
+            onClick={onShelf}
+            className="flex min-h-[56px] items-center gap-2 rounded-full bg-white px-6 font-display text-[length:var(--text-title)]
+              font-semibold text-ink shadow-[var(--shadow-soft)]"
+          >
+            <Icon name="shelf" size={28} /> My Shelf
+          </button>
         </div>
       </div>
     </main>

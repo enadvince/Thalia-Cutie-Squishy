@@ -64,6 +64,64 @@ const ART = {
       <Shine x={-1.8} y={-1.8} r={1.3} />
     </>
   ),
+  // Bonus bead: rainbow-striped ball.
+  rainbowBead: () => (
+    <>
+      <clipPath id="rb-clip">
+        <circle r="5.5" />
+      </clipPath>
+      <g clipPath="url(#rb-clip)">
+        {['#ff7eb6', '#ffd84d', '#85de7c', '#9fc7f4', '#a98bff'].map((c, i) => (
+          <rect key={c} x="-6" y={-6 + i * 2.4} width="12" height="2.5" fill={c} />
+        ))}
+      </g>
+      <Shine x={-1.8} y={-2} r={1.4} />
+    </>
+  ),
+  // Bonus bead: sleepy crescent moon.
+  moon: () => (
+    <>
+      <path d="M2 -6A6.5 6.5 0 102 6 5 5 0 012 -6z" fill="#ffd84d" />
+      <path d="M-3.5 0.5q1 1 2 0" fill="none" stroke={INK} strokeWidth="0.7" strokeLinecap="round" />
+      <ellipse cx="-2" cy="2.4" rx="1.1" ry="0.6" fill={BLUSH} opacity="0.6" />
+    </>
+  ),
+  // Daily surprises
+  gem: ({ color = '#9fc7f4' }) => (
+    <>
+      <path d="M-5 -1.5L-2.5 -5H2.5L5 -1.5L0 5.5Z" fill={color} stroke="#fff" strokeWidth="0.6" strokeLinejoin="round" />
+      <path d="M-5 -1.5H5M-2.5 -5L0 5.5L2.5 -5" fill="none" stroke="#fff" strokeWidth="0.5" opacity="0.7" />
+    </>
+  ),
+  snowflake: () => (
+    <g stroke="#9fc7f4" strokeWidth="1.1" strokeLinecap="round">
+      {[0, 60, 120].map((a) => (
+        <path key={a} d="M0 -5V5M-1.5 -3.5L0 -2L1.5 -3.5M-1.5 3.5L0 2L1.5 3.5" transform={`rotate(${a})`} />
+      ))}
+    </g>
+  ),
+  clover: () => (
+    <>
+      {[0, 90, 180, 270].map((a) => (
+        <circle key={a} cx="0" cy="-2.8" r="2.6" fill="#85de7c" transform={`rotate(${a})`} />
+      ))}
+      <circle r="1.2" fill="#5bd350" />
+    </>
+  ),
+  shell: () => (
+    <>
+      <path d="M-5.5 2.5C-5.5 -3 -2.5 -5.5 0 -5.5S5.5 -3 5.5 2.5L0 5Z" fill="#fce2cf" stroke="#f8b17f" strokeWidth="0.6" />
+      <path d="M0 5V-5M0 5L-3 -4M0 5L3 -4" stroke="#f8b17f" strokeWidth="0.5" />
+    </>
+  ),
+  flower: ({ color = '#ffb3d6' }) => (
+    <>
+      {[0, 72, 144, 216, 288].map((a) => (
+        <ellipse key={a} cx="0" cy="-3.2" rx="2" ry="2.8" fill={color} transform={`rotate(${a})`} />
+      ))}
+      <circle r="1.8" fill="#ffd84d" />
+    </>
+  ),
   // Fluffy white cloud-shaped puppy with lilac floppy ears.
   cloudPuppy: () => (
     <>
@@ -136,6 +194,8 @@ export const ART_PALETTES = {
   sprinkle: ['#4fd1c5', '#ff7eb6', '#ffd84d', '#a98bff', '#ffffff'],
   starSprinkle: ['#ffffff', '#ffd84d', '#ffb3d6'],
   pompom: ['#ffb3d6', '#d4bfff', '#9eede5', '#ffeb99'],
+  gem: ['#9fc7f4', '#d4bfff', '#9eede5', '#ffb3d6'],
+  flower: ['#ffb3d6', '#d4bfff', '#ffffff'],
 }
 
 export default function AddonArt({ art, index = 0 }) {

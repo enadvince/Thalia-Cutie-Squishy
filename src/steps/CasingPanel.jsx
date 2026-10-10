@@ -1,13 +1,10 @@
 import { useState } from 'react'
-import { motion, useAnimationControls } from 'framer-motion'
 import { SPRAYS } from '../data/sprays'
 import { SCENTS } from '../data/scents'
 import { CASING_TYPES } from '../data/casings'
 import { SHAPES } from '../data/shapes'
 import { STICKERS, FIRST_STARTER, isStickerUnlocked, stickerById, stickerSrc } from '../data/stickers'
 import { useGame } from '../state/GameContext'
-import { pop } from '../lib/audio'
-import { speak } from '../lib/speech'
 import { useChoose } from './useChoose'
 import SegmentedControl from '../components/SegmentedControl'
 import OptionCard, { OptionGrid } from '../components/OptionCard'
@@ -15,7 +12,7 @@ import Sheet from '../components/Sheet'
 import SprayArt from '../components/SprayArt'
 import ScentArt from '../components/ScentArt'
 import { ShapeParts, Face, casingColor } from '../components/SquishyView'
-import Icon from '../components/Icon'
+import LockedCard from '../components/LockedCard'
 
 export const CASING_SECTIONS = [
   { id: 'spray', label: 'Spray', icon: 'spray', instruction: 'Pick a sparkly spray!' },
@@ -137,45 +134,22 @@ function TypeThumb({ type, color }) {
   )
 }
 
-// Sticker designs: unlocked ones can be picked; locked ones show a silhouette + lock + "Coming soon!".
+// Sticker designs: unlocked ones can be picked; locked ones show a silhouette, a lock and "Coming soon!".
 function StickerGrid({ selected, onPick }) {
+  const { stars } = useGame().state
   return (
     <OptionGrid>
       {STICKERS.map((s) =>
-        isStickerUnlocked(s) ? (
+        isStickerUnlocked(s, stars) ? (
           <OptionCard key={s.id} label={s.name} selected={selected === s.id} onClick={() => onPick(s)}>
             <img src={stickerSrc(s)} alt="" className="size-16" />
           </OptionCard>
         ) : (
-          <LockedSticker key={s.id} sticker={s} />
+          <LockedCard key={s.id} name={s.name} stars={s.unlock.stars}>
+            <img src={stickerSrc(s)} alt="" className="size-16" />
+          </LockedCard>
         ),
       )}
     </OptionGrid>
-  )
-}
-
-function LockedSticker({ sticker }) {
-  const { readAloud, muted } = useGame().state.settings
-  const wiggle = useAnimationControls()
-  return (
-    <motion.button
-      type="button"
-      aria-disabled="true"
-      aria-label={`${sticker.name}, locked. Coming soon!`}
-      animate={wiggle}
-      onClick={() => {
-        pop(0.6)
-        if (readAloud && !muted) speak('Coming soon!')
-        wiggle.start({ rotate: [0, -6, 6, -4, 0], transition: { duration: 0.4 } })
-      }}
-      className="relative flex min-h-[7.5rem] flex-col items-center justify-center gap-1 rounded-[1.5rem] border-2 border-dashed
-        border-ink-soft/40 bg-white/60 p-2 text-center"
-    >
-      <span className="absolute -top-1.5 -right-1.5 grid size-8 place-items-center rounded-full bg-lilac-300 text-ink shadow">
-        <Icon name="lock" size={18} />
-      </span>
-      <img src={stickerSrc(sticker)} alt="" className="size-16 opacity-25 brightness-0" />
-      <span className="text-[length:var(--text-label)] leading-tight font-extrabold text-ink">Coming soon!</span>
-    </motion.button>
   )
 }

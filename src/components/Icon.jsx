@@ -113,6 +113,22 @@ const PATHS = {
     </>
   ),
   plus: <path d="M12 5v14M5 12h14" />,
+  // Rewards and Shelf
+  star: <path d="M12 3.5l2.6 5.3 5.8.8-4.2 4.1 1 5.8L12 16.8l-5.2 2.7 1-5.8-4.2-4.1 5.8-.8z" />,
+  gift: (
+    <>
+      <rect x="4" y="10" width="16" height="10" rx="2" />
+      <path d="M3 7h18v3H3zM12 7v13M12 7c-2-4-6-4-6-1.5S10 7 12 7zM12 7c2-4 6-4 6-1.5S14 7 12 7z" />
+    </>
+  ),
+  trash: <path d="M5 7h14M10 7V4.5h4V7M7 7l1 13h8l1-13M10 11v5M14 11v5" />,
+  medal: (
+    <>
+      <circle cx="12" cy="14" r="6" />
+      <path d="M8 3l2.5 5.5M16 3l-2.5 5.5M12 11.5l.9 1.8 2 .3-1.4 1.4.3 2-1.8-1-1.8 1 .3-2-1.4-1.4 2-.3z" />
+    </>
+  ),
+  home: <path d="M4 11l8-7 8 7v9h-5v-6h-6v6H4z" />,
   // Filling types
   crunch: <path d="M4 15l3-6 4 3 3-6 3 5 3-2v8H4z M8 18h1M13 17h1M17 18h.5" />,
   rise: (

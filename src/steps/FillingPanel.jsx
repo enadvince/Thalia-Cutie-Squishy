@@ -1,16 +1,19 @@
 import { useState } from 'react'
 import { motion } from 'framer-motion'
 import { FILLINGS } from '../data/fillings'
-import { ADDONS, MAX_ADDONS, addonById } from '../data/addons'
+import { ADDONS, MAX_ADDONS, addonById, isAddonUnlocked } from '../data/addons'
 import { COLOR_FAMILIES, LITTLE_SETS, MAX_FILLING_COLORS, colorById, onColor } from '../data/colors'
 import { useGame } from '../state/GameContext'
-import { pop } from '../lib/audio'
+import { pop, sparkle } from '../lib/audio'
+import { speak } from '../lib/speech'
+import { todayKey, todaysSurprise } from '../lib/rewards'
 import { useChoose } from './useChoose'
 import { bouncy } from '../lib/motion'
 import SegmentedControl from '../components/SegmentedControl'
 import OptionCard, { CheckBadge, OptionGrid as Grid } from '../components/OptionCard'
 import { AddonThumb } from '../components/AddonArt'
 import Icon from '../components/Icon'
+import LockedCard from '../components/LockedCard'
 
 export const FILLING_SECTIONS = [
   { id: 'type', label: 'Type', icon: 'drip', instruction: 'Pick your filling!' },
@@ -84,19 +87,69 @@ export default function FillingPanel({ section, onSection }) {
             ))}
           />
           <Grid>
-            {ADDONS.map((a) => (
-              <OptionCard
-                key={a.id}
-                label={a.name}
-                selected={draft.addons.includes(a.id)}
-                onClick={() => choose({ addons: toggleCapped(draft.addons, a.id, MAX_ADDONS) }, a.name, 1.25)}
-              >
-                <AddonThumb art={a.art} />
-              </OptionCard>
-            ))}
+            <DailySurprise
+              selected={(id) => draft.addons.includes(id)}
+              onPick={(a) => choose({ addons: toggleCapped(draft.addons, a.id, MAX_ADDONS) }, a.name, 1.25)}
+            />
+            {ADDONS.map((a) =>
+              isAddonUnlocked(a, state.stars) ? (
+                <OptionCard
+                  key={a.id}
+                  label={a.name}
+                  selected={draft.addons.includes(a.id)}
+                  onClick={() => choose({ addons: toggleCapped(draft.addons, a.id, MAX_ADDONS) }, a.name, 1.25)}
+                >
+                  <AddonThumb art={a.art} />
+                </OptionCard>
+              ) : (
+                <LockedCard key={a.id} name={a.name} stars={a.unlock.stars}>
+                  <AddonThumb art={a.art} />
+                </LockedCard>
+              ),
+            )}
           </Grid>
         </>
       )}
+    </div>
+  )
+}
+
+// Today's mystery add-on: a wrapped gift until she taps it, then a normal pick for the rest of the day.
+function DailySurprise({ selected, onPick }) {
+  const { state, dispatch } = useGame()
+  const { readAloud, muted } = state.settings
+  const day = todayKey()
+  const surprise = todaysSurprise(day)
+
+  if (state.surpriseSeen !== day) {
+    return (
+      <motion.button
+        type="button"
+        aria-label="Today's surprise! Tap to open"
+        whileTap={{ scale: 0.9 }}
+        animate={{ rotate: [0, -4, 4, 0] }}
+        transition={{ duration: 0.6, repeat: 2, repeatDelay: 2 }}
+        onClick={() => {
+          sparkle()
+          if (readAloud && !muted) speak(`Surprise! ${surprise.name}!`)
+          dispatch({ type: 'revealSurprise', day })
+        }}
+        className="flex min-h-[7.5rem] flex-col items-center justify-center gap-1 rounded-[1.5rem] bg-gradient-to-br from-pink-300
+          via-lilac-300 to-aqua-300 p-2 text-center text-ink shadow-[var(--shadow-candy)]"
+      >
+        <Icon name="gift" size={52} />
+        <span className="text-[length:var(--text-label)] leading-tight font-extrabold">Surprise!</span>
+      </motion.button>
+    )
+  }
+  return (
+    <div className="relative">
+      <span className="absolute -top-2 left-2 z-10 flex items-center gap-1 rounded-full bg-butter-300 px-2 text-[length:var(--text-label)] font-extrabold text-ink">
+        <Icon name="gift" size={16} /> Today
+      </span>
+      <OptionCard label={surprise.name} selected={selected(surprise.id)} onClick={() => onPick(surprise)}>
+        <AddonThumb art={surprise.art} />
+      </OptionCard>
     </div>
   )
 }

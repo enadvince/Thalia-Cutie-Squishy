@@ -82,6 +82,7 @@ for (const profile of PROFILES) {
   await page.waitForTimeout(500)
   if (!(await page.getByRole('button', { name: /make/i }).isVisible())) problems.push(`[${profile.name}] back did not return to title`)
   await makeAnother(page, profile)
+  await shelfFlow(page, profile)
   await context.close()
 }
 
@@ -111,6 +112,8 @@ async function stepOne(page, profile) {
   }
 
   await page.getByRole('tab', { name: 'Add-ons' }).click()
+  await panel.getByRole('button', { name: /Today's surprise/ }).click()
+  if ((await panel.getByRole('button', { name: /Today's surprise/ }).count()) !== 0) fail('the daily surprise did not unwrap')
   const addons = ['Beads', 'Glitter', 'Star Beads', 'Heart Beads', 'Cloud Puppy Beads', 'Bow Kitty Beads']
   for (const name of addons) await panel.getByRole('button', { name, exact: true }).click()
   if ((await pressed(panel)) !== 5) fail(`expected 5 add-ons picked, got ${await pressed(panel)}`)
@@ -253,6 +256,15 @@ async function stepFour(page, profile) {
 
   await page.getByRole('button', { name: 'Save to my Shelf' }).click()
   if ((await shelfOf(page)).length !== 1) fail('Save to my Shelf did not save')
+  // The first save earns a badge (and maybe unlocks): one celebration each.
+  const party = page.getByRole('alertdialog')
+  await party.waitFor({ timeout: 3000 }).catch(() => fail('no celebration for the first badge'))
+  if (!(await party.textContent()).includes('First Squishy!')) fail('the first celebration was not the First Squishy! badge')
+  await check(page, profile, 'step4-celebration')
+  while (await party.count()) {
+    await party.getByRole('button', { name: 'Yay!' }).click()
+    await page.waitForTimeout(250)
+  }
   if (!(await page.getByRole('button', { name: 'On my Shelf!' }).isVisible())) fail('saved state not shown')
 
   await page.getByRole('button', { name: 'Rename my squishy' }).click()
@@ -288,6 +300,46 @@ async function makeAnother(page, profile) {
   if ((await shelfOf(page)).length !== 1) fail('the shelf should still hold exactly the one saved squishy')
   const draft = await page.evaluate(() => JSON.parse(localStorage.getItem('thalia-squishies:v1')).maker.draft)
   if (draft.savedId || draft.name || draft.fill !== 0) fail('the new squishy did not start fresh')
+}
+
+// Shelf: stars on the title, play a saved squishy again, badges, delete with confirmation.
+async function shelfFlow(page, profile) {
+  const fail = (msg) => problems.push(`[${profile.name} / shelf] ${msg}`)
+  for (let i = 0; i < 8 && !(await page.getByRole('button', { name: 'My Shelf' }).isVisible()); i++) await page.goBack()
+  const stars = await page.evaluate(() => JSON.parse(localStorage.getItem('thalia-squishies:v1')).stars)
+  if (stars < 4) fail(`expected at least 4 stars after the first save, got ${stars}`)
+  if (!(await page.getByRole('img', { name: `${stars} stars` }).isVisible())) fail('stars not shown on the title screen')
+
+  await page.getByRole('button', { name: 'My Shelf' }).click()
+  await check(page, profile, 'shelf')
+  const cards = page.getByRole('button', { name: /^Play with / })
+  if ((await cards.count()) !== 1) fail(`expected 1 squishy on the shelf, got ${await cards.count()}`)
+
+  await cards.first().click()
+  await page.waitForTimeout(400)
+  if (!(await page.getByRole('button', { name: 'Step 4: Play' }).getAttribute('aria-current'))) fail('tapping a shelf squishy did not open it to play')
+  for (let i = 0; i < 4; i++) await page.goBack()
+  await page.waitForTimeout(300)
+
+  await page.getByRole('tab', { name: 'Badges' }).click()
+  if (!(await page.getByRole('listitem', { name: 'First Squishy!, earned' }).isVisible())) fail('First Squishy! badge not shown as earned')
+  await check(page, profile, 'shelf-badges')
+  await page.getByRole('tab', { name: 'Squishies' }).click()
+
+  const del = page.getByRole('button', { name: /^Delete / })
+  await del.click()
+  const confirm = page.getByRole('alertdialog')
+  await confirm.waitFor()
+  await check(page, profile, 'shelf-delete')
+  await confirm.getByRole('button', { name: 'Keep it' }).click()
+  if ((await cards.count()) !== 1) fail('Keep it should keep the squishy')
+  await del.click()
+  await confirm.getByRole('button', { name: 'Delete', exact: true }).click()
+  await page.waitForTimeout(300)
+  if ((await cards.count()) !== 0) fail('Delete did not remove the squishy')
+  if (!(await page.getByText('Make your first squishy!').isVisible())) fail('empty shelf message missing')
+  const after = await page.evaluate(() => JSON.parse(localStorage.getItem('thalia-squishies:v1')).stars)
+  if (after !== stars) fail('deleting a squishy changed the stars')
 }
 
 console.log(problems.length ? `\n${problems.length} problem(s):\n${problems.join('\n')}` : '\nAll checks passed.')

@@ -6,6 +6,8 @@ import { detectPlatform } from './lib/platform'
 import { unlockSpeech } from './lib/speech'
 import TitleScreen from './screens/TitleScreen'
 import MakerScreen from './screens/MakerScreen'
+import ShelfScreen from './screens/ShelfScreen'
+import Celebration from './components/Celebration'
 
 const platform = detectPlatform()
 document.documentElement.dataset.platform = platform
@@ -17,6 +19,7 @@ export default function App() {
       <MotionConfig reducedMotion="user">
         <GameProvider>
           <Screens />
+          <Celebration />
         </GameProvider>
       </MotionConfig>
     </PlatformContext.Provider>
@@ -45,14 +48,35 @@ function Screens() {
     history.pushState({ screen: 'maker', step }, '')
   }
 
+  // Opens the maker at a step, building the back stack one step at a time.
+  const openMaker = (step) => {
+    for (let i = 0; i <= step; i++) history.pushState({ screen: 'maker', step: i }, '')
+    setScreen('maker')
+  }
+
   if (screen === 'title') {
     return (
       <TitleScreen
         onPlay={() => {
           unlockSpeech()
-          // Resume where she left off (autosave), building the back stack step by step.
-          for (let i = 0; i <= state.maker.step; i++) history.pushState({ screen: 'maker', step: i }, '')
-          setScreen('maker')
+          openMaker(state.maker.step) // resume where she left off (autosave)
+        }}
+        onShelf={() => {
+          unlockSpeech()
+          history.pushState({ screen: 'shelf' }, '')
+          setScreen('shelf')
+        }}
+      />
+    )
+  }
+  if (screen === 'shelf') {
+    return (
+      <ShelfScreen
+        onBack={() => history.back()}
+        onMake={() => openMaker(state.maker.step)}
+        onPlay={(id) => {
+          dispatch({ type: 'loadSquishy', id })
+          openMaker(3)
         }}
       />
     )
