@@ -4,6 +4,7 @@
 //     kScale: scales the texture's springiness   kAdd: the casing's own pull back to shape
 //     moldScale: how much of the texture's moldability comes through (0–1)   moldAdd: extra moldability
 //     recover: how fast a molded shape creeps back (per second; 0 = it stays)
+//     pressScale / stretchScale: how far it gives under a press or a pull (<1 = firmer)
 //     bulge: spots bubble up in a ring around a press (balloon)   stress: stretched spots go pale (plastic)
 //   wax: a waxy coat that cracks and chips off   bubbles: a layer of bubbles that pop when pressed
 export const CASING_TYPES = [
@@ -19,10 +20,10 @@ export const CASING_TYPES = [
     id: 'plastic', name: 'Plastic', icon: 'shine', opacity: 0.88, gloss: 1, rim: 0.7,
     play: { kScale: 1.2, kAdd: 3, moldScale: 0.7, recover: 0.25, stress: 1 },
   },
-  // Wax: a gel casing with a waxy coat on the outside that cracks and chips off in Play.
+  // Wax: a firm, waxy casing (it gives less than Gel but still keeps dents) whose coat cracks and chips off in Play.
   {
     id: 'wax', name: 'Wax', icon: 'candle', opacity: 0.32, gloss: 0.6, rim: 0.7, wax: true,
-    play: { kScale: 0.7, moldScale: 1, moldAdd: 0.3, recover: 0 },
+    play: { kScale: 1, kAdd: 6, pressScale: 0.7, stretchScale: 0.7, moldScale: 1, moldAdd: 0.25, recover: 0 },
   },
   // Bubble wrap: a crinkly clear casing covered in little bubbles that pop when pressed.
   {
@@ -42,6 +43,8 @@ export function playPhysics(physics, casing) {
   return {
     ...physics,
     k: physics.k * (p.kScale ?? 1) + (p.kAdd ?? 0),
+    press: physics.press * (p.pressScale ?? 1),
+    stretch: physics.stretch * (p.stretchScale ?? 1),
     plasticity,
     // A moldier texture fights the casing's pull: fully moldable fillings recover at half speed.
     recover: (p.recover ?? 0) * (1 - physics.plasticity * 0.5),

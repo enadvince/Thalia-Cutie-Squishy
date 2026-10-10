@@ -5,6 +5,7 @@ const GRAB_STIFFNESS = 600 // how firmly points follow a finger
 const RADIUS = 0.16 // finger influence radius
 const POKE_RADIUS = 0.1
 const DENT_RADIUS = 0.08 // a press dents just the spot under the finger…
+const KEEP_RADIUS = 0.11 // …and a moldable squishy keeps a dent a little wider than the fingertip
 const SQUASH = 0.35 // …while the whole squishy spreads a little wider and shorter
 const FLOOR = 0.9 // where the squishy sits (it squashes down toward here)
 const MAX_DENT = 0.12 // furthest a Putty dent can move a rest spot
@@ -73,7 +74,7 @@ export class SoftBody {
     const { plasticity } = this.physics
     if (plasticity > 0) {
       // Putty keeps part of the dent (or stretch): move rest spots toward where the points are now.
-      const keep = g.moved ? g.w : g.dent
+      const keep = g.moved ? g.w : this.weights(g.x, g.y, KEEP_RADIUS)
       for (let v = 0; v < keep.length; v++) {
         for (let a = 0; a < 2; a++) {
           const k = v * 2 + a
@@ -165,7 +166,8 @@ export class SoftBody {
         const squash = depth * SQUASH
         const spread = axis ? FLOOR + (restV - FLOOR) * (1 - squash) : 0.5 + (restV - 0.5) * (1 + squash * 0.8)
         const p = axis ? g.y : g.x
-        let goal = spread + g.dent[v] * (p - restV) * depth * 1.6
+        // Moldable textures sink in deeper under the finger.
+        let goal = spread + g.dent[v] * (p - restV) * depth * (1.6 + 1.6 * this.physics.plasticity)
         if (this.physics.bulge) {
           // Balloon: a ring of surface bubbles up around the finger, growing the longer you hold.
           const rx = this.rest[v * 2] - g.x
@@ -222,7 +224,7 @@ export class SoftBody {
         const c = a + row + 1
         const d = a + row
         const area = Math.abs(quadArea(this.pos, a, b, c, d))
-        const s = clamp(1 - (1 - area / this.restArea) * 0.45, 0.78, 1.08)
+        const s = clamp(1 - (1 - area / this.restArea) * 0.5, 0.68, 1.08)
         for (const v of [a, b, c, d]) {
           this.shade[v] += s
           counts[v] += 1
