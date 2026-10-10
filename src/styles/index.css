@@ -34,53 +34,56 @@
   --text-hero: clamp(2.25rem, 9vw, 4rem);
 }
 
-/* ---------- Base ---------- */
-html {
-  font-size: 100%;
-  -webkit-text-size-adjust: 100%;
-  text-size-adjust: 100%;
-  background: var(--cream);
-  color: var(--ink);
-}
+/* ---------- Base ----------
+   In @layer base so Tailwind utility classes (font-*, text-*) can override it. */
+@layer base {
+  html {
+    font-size: 100%;
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
+    background: var(--cream);
+    color: var(--ink);
+  }
 
-/* iOS Safari: this system font keyword makes rem follow Dynamic Type. */
-html[data-platform="ios"] {
-  font: -apple-system-body;
-}
+  /* iOS Safari: this system font keyword makes rem follow Dynamic Type. */
+  html[data-platform="ios"] {
+    font: -apple-system-body;
+  }
 
-body {
-  margin: 0;
-  min-height: 100dvh;
-  font-family: var(--font-label);
-  font-size: var(--text-body);
-  font-weight: 600;
-  line-height: 1.4;
-  -webkit-tap-highlight-color: transparent;
-  overscroll-behavior: none;
-  background:
-    radial-gradient(60vmax 60vmax at 10% 0%, var(--candy-pink-100), transparent 60%),
-    radial-gradient(55vmax 55vmax at 100% 30%, var(--candy-lilac-100), transparent 60%),
-    radial-gradient(60vmax 60vmax at 30% 100%, var(--candy-aqua-100), transparent 60%),
-    var(--cream);
-  background-attachment: fixed;
-}
+  body {
+    margin: 0;
+    min-height: 100dvh;
+    font-family: var(--font-label);
+    font-size: var(--text-body);
+    font-weight: 600;
+    line-height: 1.4;
+    -webkit-tap-highlight-color: transparent;
+    overscroll-behavior: none;
+    background:
+      radial-gradient(60vmax 60vmax at 10% 0%, var(--candy-pink-100), transparent 60%),
+      radial-gradient(55vmax 55vmax at 100% 30%, var(--candy-lilac-100), transparent 60%),
+      radial-gradient(60vmax 60vmax at 30% 100%, var(--candy-aqua-100), transparent 60%),
+      var(--cream);
+    background-attachment: fixed;
+  }
 
-/* System chrome (app bars, alerts) uses the platform UI font. */
-.chrome-font {
-  font-family: var(--chrome-font);
-}
+  /* System chrome (app bars, alerts) uses the platform UI font. */
+  .chrome-font {
+    font-family: var(--chrome-font);
+  }
 
-button {
-  font: inherit;
-  color: inherit;
-  cursor: pointer;
-  touch-action: manipulation;
-}
+  button {
+    font: inherit;
+    color: inherit;
+    cursor: pointer;
+    touch-action: manipulation;
+  }
 
-:focus-visible {
-  outline: 3px solid var(--focus-ring);
-  outline-offset: 3px;
-  border-radius: var(--radius-pill);
+  :focus-visible {
+    outline: 3px solid var(--focus-ring);
+    outline-offset: 3px;
+    border-radius: var(--radius-pill);
+  }
 }
 
 /* Labels in tight rows (stepper, segmented control) hide when user text is very large; icons + aria-label remain.
@@ -155,4 +158,19 @@ button {
     animation: none !important;
     opacity: 0.85;
   }
+}
+
+/* Filling dripping from the piping bag tip while pouring. */
+@keyframes drip {
+  from {
+    translate: 0 0;
+    opacity: 1;
+  }
+  to {
+    translate: 0 16px;
+    opacity: 0;
+  }
+}
+.drip {
+  animation: drip 0.4s ease-in infinite;
 }

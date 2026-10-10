@@ -1,5 +1,5 @@
 import { useEffect, useId, useMemo, useState } from 'react'
-import { motion } from 'framer-motion'
+import { motion, useReducedMotion } from 'framer-motion'
 import { shapeById } from '../data/shapes'
 import { casingTypeById } from '../data/casings'
 import { sprayById } from '../data/sprays'
@@ -10,6 +10,7 @@ import { mix } from '../lib/color'
 import { seeded } from '../lib/random'
 import SprayArt from './SprayArt'
 import ScentArt from './ScentArt'
+import FillingMass from './FillingMass'
 
 const INK = '#3b2a4a'
 
@@ -92,8 +93,20 @@ function ShapeDecor({ decor, color }) {
   }
 }
 
-// The casing preview: shape + casing type + spray + scent. Step 3 will pour the filling in.
-export default function SquishyView({ draft }) {
+// Area the filling occupies inside any shape (the shape's clip trims it).
+const FILL_BOX = { x: 20, y: 22, w: 220, h: 228 }
+
+// How the casing looks at a fill level: squashed when empty, round when full, a little bulgy when overfilled.
+function inflation(fill) {
+  const f = Math.min(fill, 1)
+  const extra = Math.max(0, fill - 1) * 0.3
+  return { scaleX: 0.86 + 0.14 * f + extra, scaleY: 0.72 + 0.28 * f + extra }
+}
+
+// The squishy: shape + casing type + spray + scent.
+// `fill` (Step 3 onward) pours the filling in and inflates the casing; `jiggle` and `burst`
+// are counters that play a happy jiggle / sparkle burst each time they go up.
+export default function SquishyView({ draft, fill, jiggle = 0, burst = 0 }) {
   const uid = useId().replace(/:/g, '')
   const shape = shapeById(draft.shape)
   const type = casingTypeById(draft.casingType)
@@ -119,6 +132,8 @@ export default function SquishyView({ draft }) {
   }, [spray, shape])
 
   const clip = `url(#${uid}-shape)`
+  const filled = fill !== undefined
+  const shape3 = filled ? inflation(fill) : { scaleX: 1, scaleY: 1 }
 
   return (
     <svg
@@ -156,6 +171,18 @@ export default function SquishyView({ draft }) {
       <ellipse cx="130" cy="240" rx="88" ry="10" fill="#a3245f" opacity="0.12" />
 
       <motion.g
+        animate={shape3}
+        transition={{ type: 'spring', stiffness: 220, damping: 14 }}
+        style={{ transformBox: 'view-box', transformOrigin: '130px 236px' }}
+      >
+      <motion.g
+        key={`jiggle-${jiggle}`}
+        initial={false}
+        animate={jiggle ? { scaleX: [1, 1.1, 0.94, 1.05, 1], scaleY: [1, 0.9, 1.06, 0.97, 1] } : {}}
+        transition={{ duration: 0.6 }}
+        style={{ transformBox: 'view-box', transformOrigin: '130px 236px' }}
+      >
+      <motion.g
         key={bounce}
         initial={{ scaleX: 1.06, scaleY: 0.94 }}
         animate={{ scaleX: 1, scaleY: 1 }}
@@ -171,7 +198,17 @@ export default function SquishyView({ draft }) {
         <g clipPath={clip}>
           {/* the casing itself: how see-through depends on the casing type */}
           <rect x="-10" y="-20" width="280" height="280" fill="#fff" opacity="0.35" />
-          <rect x="-10" y="-20" width="280" height="280" fill={color} opacity={type.opacity} />
+          {filled && (
+            <FillingMass
+              draft={draft}
+              box={FILL_BOX}
+              top={FILL_BOX.y + FILL_BOX.h * (1 - Math.min(fill, 1))}
+              center={[130, 140]}
+              scatterTop={FILL_BOX.y + 24}
+            />
+          )}
+          {/* once filled, the casing reads a little clearer so the filling shows through */}
+          <rect x="-10" y="-20" width="280" height="280" fill={color} opacity={filled ? type.opacity * 0.75 : type.opacity} />
 
           {/* spray */}
           {speckles.map((p) =>
@@ -205,6 +242,10 @@ export default function SquishyView({ draft }) {
         {!['tentacles', 'gills'].includes(shape.decor) && <ShapeDecor decor={shape.decor} />}
         {shape.face && <Face face={shape.face} />}
       </motion.g>
+      </motion.g>
+      </motion.g>
+
+      {burst > 0 && <SparkleBurst key={burst} />}
 
       {/* scent bubbles drifting up */}
       {[[18, 200], [236, 180], [30, 90], [226, 70], [8, 150], [246, 130]].map(([x, y], i) => (
@@ -217,5 +258,28 @@ export default function SquishyView({ draft }) {
         </g>
       ))}
     </svg>
+  )
+}
+
+// Stars flying outward when the squishy is full. Skipped with reduce motion.
+function SparkleBurst() {
+  const reduce = useReducedMotion()
+  if (reduce) return null
+  return (
+    <g aria-hidden="true">
+      {Array.from({ length: 12 }, (_, i) => {
+        const a = (Math.PI * 2 * i) / 12
+        return (
+          <motion.g
+            key={i}
+            initial={{ x: 130, y: 130, scale: 0.4, opacity: 1 }}
+            animate={{ x: 130 + Math.cos(a) * 125, y: 130 + Math.sin(a) * 115, scale: 1.4, opacity: 0 }}
+            transition={{ duration: 0.9, ease: 'easeOut' }}
+          >
+            <SprayArt art={i % 2 ? 'star' : 'glitter'} index={i} />
+          </motion.g>
+        )
+      })}
+    </g>
   )
 }
