@@ -38,7 +38,7 @@ Legend: ✅ verified · 🔜 lands in a later phase (phase number) · 🤖 check
 | P7 | Pickers in a sheet-style panel (1.75rem top corners, material blur) | Pickers in an M3 standard (non-modal) bottom sheet surface (28dp top corners, surface-container) | ✅ Steps 1–2; Sticker picker is a modal sheet (iOS sheet / M3 modal bottom sheet with scrim), closes on Done, scrim tap, Escape, or system back |
 | P11 | Section switch: HIG segmented control (grey track, white thumb) | M3 segmented buttons (outlined, check on selected) | ✅ `SegmentedControl.jsx` |
 | P8 | Alerts per HIG | M3 dialogs | 🔜 6–7 |
-| P9 | Haptics: light only (Safari has no vibrate API, so it's a no-op) | Light `vibrate(10)` tick, never continuous | ✅ step advance · 🔜 5 |
+| P9 | Haptics: light only (Safari has no vibrate API, so it's a no-op) | Light `vibrate(10)` tick, never continuous | ✅ step advance, fill complete, press/poke/shake (one tick each) |
 | P10 | Color: candy palette mapped to M3 color roles ("dynamic color" tokens) | | ✅ `tokens.css` |
 
 ## Kids store policies
@@ -49,7 +49,7 @@ Legend: ✅ verified · 🔜 lands in a later phase (phase number) · 🤖 check
 | K2 | No third-party analytics/ads SDKs | ✅ |
 | K3 | COPPA-safe: localStorage only, no accounts | ✅ |
 | K4 | Playtime reminder | 🔜 7 |
-| K5 | Text input via allow-list or presets only | 🔜 5–6 |
+| K5 | Text input via allow-list or presets only | ✅ Little Maker: presets only; Big Maker: typed names accepted only if every word is on `ALLOWED_WORDS` (`src/data/names.js`) |
 
 ## Phase sign-off log
 
@@ -59,3 +59,4 @@ Legend: ✅ verified · 🔜 lands in a later phase (phase number) · 🤖 check
 | 2 | Step 1: Type / Colors / Add-ons + live jar, Little & Big Maker | ✅ `npm run verify`: 9 profiles (adds Big Maker iPhone + iPad) with no problems; Step 1 flow checks pass (single-select type, 3-color cap, 5-add-on cap, More colors, family tabs, Undo). Manual review fixed: phone overflow, truncated segment labels, jar overflowing its card, invisible tiny add-on thumbnails. |
 | 3 | Step 2: Spray / Scent / Type / Shape, sticker sheet, scent tint + particles | ✅ `npm run verify`: 9 profiles with no problems; Step 2 flow checks pass (single-select spray, locked sticker can't be picked, Done and system back close the sheet without leaving the step). Manual review of all 15 shapes. Fixed: the sheet was hidden behind the stepper (transformed ancestor broke `position: fixed`; now portaled), the puppy's ears were hidden, and the sheet title truncated at 200% text. |
 | 4 | Step 3: hold FILL! or drag the piping bag, casing inflates, sparkle burst, overfill jiggle | ✅ `npm run verify`: 9 profiles with no problems; Step 3 flow checks pass (drag fills, Undo empties, ~half at 1.5s hold, full, overfull state). The FILL! button works with touch, mouse and keyboard (Space/Enter), with a progressbar for screen readers. Fixed: base CSS was unlayered, so Tailwind font/color classes on every `<button>` were ignored (now `@layer base`); filling made more visible through gel. |
+| 5 | Step 4: soft-body play (press, stretch, poke, two-finger pinch, shake), per-filling physics and sounds, Save to my Shelf, Make another, Rename | ✅ `npm run verify`: 9 profiles, 119 screens, no problems. Step 4 checks pass: press and stretch, all four play buttons, Save, Rename (preset in Little Maker; allowed typed name and a gently refused word in Big Maker), and Make another (saves first, then starts fresh). Pinch is optional; every gesture also has a single-tap button. Shake uses device motion only where no permission prompt is needed (Android); iOS uses the Shake button. Physics tested in Node: Slow Rising rebounds slowly, and Putty keeps dents until shaken. |
