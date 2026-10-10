@@ -114,7 +114,9 @@ async function stepOne(page, profile) {
     await page.getByRole('button', { name: 'Next colors' }).click()
     if (!(await panel.getByRole('button', { name: 'Peach Fuzz' }).isVisible())) fail('the next-page arrow did not show the next colors')
     await page.getByRole('button', { name: 'Previous colors' }).click()
-    await page.getByRole('tab', { name: /Color page 5 of 5/ }).click()
+    const page5 = page.getByRole('tab', { name: /Color page 5 of 5/ })
+    await page5.evaluate((el) => el.scrollIntoView({ block: 'center' })) // clear of the sticky Next bar at big text sizes
+    await page5.click()
     if (!(await panel.getByRole('button', { name: 'Marshmallow' }).isVisible())) fail('the page overview did not jump to page 5')
     if ((await page.getByRole('tab', { name: /Color page 5 of 5/ }).getAttribute('aria-selected')) !== 'true') fail('page indicator not on page 5')
   }
