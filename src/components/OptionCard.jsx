@@ -36,3 +36,7 @@ export function CheckBadge() {
     </motion.span>
   )
 }
+
+export const OptionGrid = ({ children }) => (
+  <div className="grid grid-cols-[repeat(auto-fill,minmax(7.5rem,1fr))] gap-3">{children}</div>
+)

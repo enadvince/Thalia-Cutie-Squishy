@@ -72,7 +72,8 @@ for (const profile of PROFILES) {
   await page.getByRole('button', { name: /make/i }).click()
   await stepOne(page, profile)
   for (let i = 1; i <= 4; i++) {
-    if (i > 1) await check(page, profile, `step${i}`)
+    if (i === 2) await stepTwo(page, profile)
+    else if (i > 2) await check(page, profile, `step${i}`)
     if (i < 4) await page.getByRole('button', { name: /^next/i }).click()
   }
   // System back should walk back through steps, then to the title.
@@ -117,6 +118,55 @@ async function stepOne(page, profile) {
   const afterUndo = await pressed(panel)
   if (afterUndo !== 5 || !(await panel.getByRole('button', { name: 'Beads', exact: true }).getAttribute('aria-pressed')).includes('true'))
     fail('Undo did not restore the previous add-ons')
+}
+
+// Step 2: sprays, the sticker sheet (locked stickers, Done, system back), scents, types, shapes.
+async function stepTwo(page, profile) {
+  const fail = (msg) => problems.push(`[${profile.name} / step2] ${msg}`)
+  const panel = page.getByRole('region', { name: 'Choices' })
+  const dialog = page.getByRole('dialog')
+
+  await check(page, profile, 'step2-spray')
+  await panel.getByRole('button', { name: 'Heart Spray' }).click()
+  if ((await panel.locator('[aria-pressed="true"]').count()) !== 1) fail('spray is not single-select')
+
+  await panel.getByRole('button', { name: 'Sticker Spray' }).click()
+  await dialog.waitFor()
+  const locked = dialog.getByRole('button', { name: /locked/ })
+  if ((await locked.count()) !== 1) fail(`expected 1 locked sticker, got ${await locked.count()}`)
+  await locked.first().dispatchEvent('click') // aria-disabled, but a tap still lands (it wiggles)
+  if ((await dialog.locator('[aria-pressed="true"]').count()) !== 1) fail('tapping a locked sticker changed the pick')
+  await dialog.getByRole('button', { name: 'Rainbow Cloud' }).click()
+  await check(page, profile, 'step2-stickers')
+  await dialog.getByRole('button', { name: 'Done' }).click()
+  await dialog.waitFor({ state: 'detached' })
+
+  // System back closes the sheet but stays on Step 2.
+  await panel.getByRole('button', { name: 'Sticker Spray' }).click()
+  await dialog.waitFor()
+  await page.goBack()
+  await dialog.waitFor({ state: 'detached', timeout: 3000 }).catch(() => fail('system back did not close the sticker sheet'))
+  if (!(await page.getByRole('button', { name: 'Step 2: Casing' }).getAttribute('aria-current'))) fail('system back left Step 2')
+
+  await page.getByRole('tab', { name: 'Scent' }).click()
+  await panel.getByRole('button', { name: 'Cola' }).click()
+  await check(page, profile, 'step2-scent')
+  await page.getByRole('tab', { name: 'Type' }).click()
+  await panel.getByRole('button', { name: 'Plastic' }).click()
+  await page.getByRole('tab', { name: 'Shape' }).click()
+
+  // One profile saves a preview of every shape for manual review.
+  if (profile.name === 'ipad-landscape') {
+    mkdirSync(`${OUT}/shapes`, { recursive: true })
+    const names = await panel.locator('button[aria-pressed]').evaluateAll((els) => els.map((e) => e.getAttribute('aria-label')))
+    for (const name of names) {
+      await panel.getByRole('button', { name, exact: true }).click()
+      await page.waitForTimeout(450)
+      await page.getByRole('region', { name: 'Squishy preview' }).screenshot({ path: `${OUT}/shapes/${name}.png` })
+    }
+  }
+  await panel.getByRole('button', { name: 'Kitty' }).click()
+  await check(page, profile, 'step2-shape')
 }
 
 console.log(problems.length ? `\n${problems.length} problem(s):\n${problems.join('\n')}` : '\nAll checks passed.')

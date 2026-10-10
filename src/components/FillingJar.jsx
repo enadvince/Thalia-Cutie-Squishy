@@ -4,6 +4,7 @@ import { fillingById } from '../data/fillings'
 import { colorById } from '../data/colors'
 import { addonById } from '../data/addons'
 import AddonArt from './AddonArt'
+import { seeded } from '../lib/random'
 
 // Jar geometry (viewBox 0 0 260 320)
 const IN = { x: 44, y: 66, w: 172, h: 230, r: 36 } // glass interior
@@ -20,16 +21,6 @@ function spiralPath(offset) {
   return `M${pts.join(' L')}`
 }
 const SPIRALS = [spiralPath(0), spiralPath(Math.PI)]
-
-// Small deterministic random so add-ons stay put between renders.
-function seeded(str) {
-  let h = 2166136261
-  for (const ch of str) h = Math.imul(h ^ ch.charCodeAt(0), 16777619)
-  return () => {
-    h = Math.imul(h ^ (h >>> 15), 2246822507) ^ Math.imul(h ^ (h >>> 13), 3266489909)
-    return ((h >>>= 0) % 10000) / 10000
-  }
-}
 
 const BIG_ART = new Set(['cloudPuppy', 'bowKitty', 'bunnyImp', 'pinkLamb', 'sunnyPup', 'pompom'])
 

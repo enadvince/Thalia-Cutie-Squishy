@@ -15,11 +15,14 @@ import Icon from '../components/Icon'
 import Confetti from '../components/Confetti'
 import FillingJar from '../components/FillingJar'
 import FillingPanel, { FILLING_SECTIONS } from '../steps/FillingPanel'
+import SquishyView from '../components/SquishyView'
+import CasingPanel, { CASING_SECTIONS } from '../steps/CasingPanel'
 
 // What each step shows: Stage = live preview (custom game look), Panel = pickers (platform sheet).
 // Steps without a view yet show a "Coming soon!" placeholder.
 const STEP_VIEWS = {
   filling: { Stage: FillingJar, Panel: FillingPanel, sections: FILLING_SECTIONS },
+  casing: { Stage: SquishyView, Panel: CasingPanel, sections: CASING_SECTIONS },
 }
 
 // The 4-step maker shell.
