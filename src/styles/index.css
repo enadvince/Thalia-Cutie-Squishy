@@ -83,13 +83,13 @@ button {
   border-radius: var(--radius-pill);
 }
 
-/* Step labels hide when user text is very large, so the stepper never breaks.
+/* Labels in tight rows (stepper, segmented control) hide when user text is very large; icons + aria-label remain.
    Container-query em units follow the container's own font size. */
-.step-item {
+.fit-item {
   container-type: inline-size;
 }
 @container (max-width: 3.6em) {
-  .step-label {
+  .fit-label {
     display: none;
   }
 }
@@ -112,4 +112,22 @@ button {
   .ios-back-label {
     display: none;
   }
+}
+
+/* Gentle ambient motion inside the preview jar (switched off by reduce motion above). */
+@keyframes slow-spin {
+  to {
+    rotate: 360deg;
+  }
+}
+.slow-spin {
+  animation: slow-spin 40s linear infinite;
+}
+@keyframes float-bob {
+  50% {
+    translate: 0 -3px;
+  }
+}
+.float-bob {
+  animation: float-bob 3.2s ease-in-out infinite;
 }

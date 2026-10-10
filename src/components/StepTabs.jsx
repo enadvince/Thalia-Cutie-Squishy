@@ -18,7 +18,7 @@ export default function StepTabs({ step, furthest, onSelect }) {
             const active = i === step
             const reachable = i <= furthest
             return (
-              <li key={s.id} className="step-item min-w-0 flex-1">
+              <li key={s.id} className="fit-item min-w-0 flex-1">
                 <button
                   type="button"
                   onClick={() => reachable && onSelect(i)}
@@ -37,7 +37,7 @@ export default function StepTabs({ step, furthest, onSelect }) {
                   )}
                   <span className="relative flex flex-col items-center leading-tight">
                     <Icon name={s.icon} size={26} />
-                    <span className="step-label text-[length:var(--text-label)] font-extrabold">{s.label}</span>
+                    <span className="fit-label text-[length:var(--text-label)] font-extrabold">{s.label}</span>
                   </span>
                 </button>
               </li>

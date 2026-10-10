@@ -9,7 +9,9 @@ npm install
 npm run dev          # open the URL on a phone/tablet on the same Wi-Fi with: npm run dev -- --host
 ```
 
-Force a platform's look for testing: add `?platform=ios` or `?platform=android` to the URL.
+Testing switches (URL only, until the parent gate arrives in Phase 7):
+- `?platform=ios` or `?platform=android` forces a platform's look
+- `?mode=big` or `?mode=little` picks Big Maker or Little Maker
 
 ## Verify a phase
 
@@ -23,7 +25,8 @@ npm run verify       # screenshots land in verify-out/
 
 ## Where things live
 
-- `src/data/*.js`: all game content (steps and modes so far; fillings, colors, etc. come in later phases). Add options here without touching components.
+- `src/data/*.js`: all game content: steps, modes, fillings, add-ons, colors (100, generated from 10 families). Add options here without touching components.
+- `src/components/AddonArt.jsx`: the drawing for each add-on (an add-on's `art` key in `addons.js` points here).
 - `src/styles/tokens.css`: candy palette, M3 color roles, iOS roles, motion and size tokens.
 - `src/components/`: platform-adaptive chrome (`AppBar`, `Buttons`, `StepTabs`) and the `Mascot`.
 - `src/state/GameContext.jsx`: React context + autosave to `localStorage`, with Undo history.
@@ -33,7 +36,7 @@ npm run verify       # screenshots land in verify-out/
 ## Build phases
 
 1. ✅ Setup, design tokens, title screen, 4-step stepper shell, research summary
-2. Step 1: filling + live preview jar
+2. ✅ Step 1: filling + live preview jar
 3. Step 2: casing, sprays, scents, locked stickers
 4. Step 3: fill interaction
 5. Step 4: play physics + sounds

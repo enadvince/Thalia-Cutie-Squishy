@@ -17,6 +17,8 @@ const PROFILES = [
   { name: 'iphone-text200', platform: 'ios', device: devices['iPhone 13'], textScale: 2 },
   { name: 'pixel-text200', platform: 'android', device: devices['Pixel 7'], textScale: 2 },
   { name: 'pixel-reducedmotion', platform: 'android', device: devices['Pixel 7'], reducedMotion: 'reduce' },
+  { name: 'iphone-bigmaker', platform: 'ios', device: devices['iPhone 13'], mode: 'big' },
+  { name: 'ipad-bigmaker', platform: 'ios', device: devices['iPad Pro 11 landscape'], mode: 'big' },
 ]
 
 const MIN_TARGET = { ios: 44, android: 48 }
@@ -58,7 +60,7 @@ for (const profile of PROFILES) {
   const context = await browser.newContext({ ...profile.device, reducedMotion: profile.reducedMotion ?? 'no-preference' })
   const page = await context.newPage()
   page.on('pageerror', (e) => problems.push(`[${profile.name}] page error: ${e.message}`))
-  await page.goto(`${BASE}/?platform=${profile.platform}`)
+  await page.goto(`${BASE}/?platform=${profile.platform}${profile.mode ? `&mode=${profile.mode}` : ''}`)
   await page.evaluate(() => localStorage.clear())
   await page.reload()
   if (profile.textScale) {
@@ -68,8 +70,9 @@ for (const profile of PROFILES) {
 
   await check(page, profile, '0-title')
   await page.getByRole('button', { name: /make/i }).click()
+  await stepOne(page, profile)
   for (let i = 1; i <= 4; i++) {
-    await check(page, profile, `step${i}`)
+    if (i > 1) await check(page, profile, `step${i}`)
     if (i < 4) await page.getByRole('button', { name: /^next/i }).click()
   }
   // System back should walk back through steps, then to the title.
@@ -80,5 +83,41 @@ for (const profile of PROFILES) {
 }
 
 await browser.close()
+
+// Step 1: pick a type, colors and add-ons; check the caps and Undo behave.
+async function stepOne(page, profile) {
+  const fail = (msg) => problems.push(`[${profile.name} / step1] ${msg}`)
+  const pressed = (scope) => scope.locator('[aria-pressed="true"]').count()
+  const panel = page.getByRole('region', { name: 'Choices' })
+
+  await check(page, profile, 'step1-type')
+  await panel.getByRole('button', { name: 'Crunchy' }).click()
+  if ((await pressed(panel)) !== 1) fail('filling type is not single-select')
+
+  await page.getByRole('tab', { name: 'Colors' }).click()
+  for (const name of ['Cotton Candy', 'Cherry Pop', 'Fairy Floss']) await panel.getByRole('button', { name }).click()
+  // Default Bubblegum Pop + 3 more = 4 picks, capped to 3 (oldest drops).
+  if ((await pressed(panel)) !== 3) fail(`expected 3 colors picked, got ${await pressed(panel)}`)
+  await check(page, profile, 'step1-colors')
+  if (profile.mode === 'big') {
+    await page.getByRole('tab', { name: 'Blues' }).click()
+    await check(page, profile, 'step1-colors-blues')
+  } else {
+    await page.getByRole('button', { name: 'More colors' }).click()
+    if (!(await panel.getByRole('button', { name: 'Peach Fuzz' }).isVisible())) fail('More colors did not show the next set')
+  }
+
+  await page.getByRole('tab', { name: 'Add-ons' }).click()
+  const addons = ['Beads', 'Glitter', 'Star Beads', 'Heart Beads', 'Cloud Puppy Beads', 'Bow Kitty Beads']
+  for (const name of addons) await panel.getByRole('button', { name, exact: true }).click()
+  if ((await pressed(panel)) !== 5) fail(`expected 5 add-ons picked, got ${await pressed(panel)}`)
+  await check(page, profile, 'step1-addons')
+
+  await page.getByRole('button', { name: 'Undo' }).click()
+  const afterUndo = await pressed(panel)
+  if (afterUndo !== 5 || !(await panel.getByRole('button', { name: 'Beads', exact: true }).getAttribute('aria-pressed')).includes('true'))
+    fail('Undo did not restore the previous add-ons')
+}
+
 console.log(problems.length ? `\n${problems.length} problem(s):\n${problems.join('\n')}` : '\nAll checks passed.')
 process.exit(problems.length ? 1 : 0)

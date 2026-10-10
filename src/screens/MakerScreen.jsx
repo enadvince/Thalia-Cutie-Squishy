@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
 import { STEPS } from '../data/steps'
 import { useGame } from '../state/GameContext'
@@ -7,25 +7,43 @@ import { transitions } from '../lib/motion'
 import { isStandalone } from '../lib/platform'
 import { speak } from '../lib/speech'
 import { tick } from '../lib/haptics'
+import { jingle } from '../lib/audio'
 import AppBar from '../components/AppBar'
 import StepTabs from '../components/StepTabs'
 import { IconButton, PrimaryButton } from '../components/Buttons'
 import Icon from '../components/Icon'
+import Confetti from '../components/Confetti'
+import FillingJar from '../components/FillingJar'
+import FillingPanel, { FILLING_SECTIONS } from '../steps/FillingPanel'
 
-// The 4-step maker shell. Step content plugs into the stage + panel slots in later phases.
+// What each step shows: Stage = live preview (custom game look), Panel = pickers (platform sheet).
+// Steps without a view yet show a "Coming soon!" placeholder.
+const STEP_VIEWS = {
+  filling: { Stage: FillingJar, Panel: FillingPanel, sections: FILLING_SECTIONS },
+}
+
+// The 4-step maker shell.
 export default function MakerScreen({ onGoToStep, onBack }) {
   const { state, dispatch } = useGame()
   const platform = usePlatform()
   const reduce = useReducedMotion()
-  const { step, furthest, past } = state.maker
+  const { step, furthest, past, draft } = state.maker
   const { readAloud, muted } = state.settings
   const current = STEPS[step]
   const isLast = step === STEPS.length - 1
+  const view = STEP_VIEWS[current.id]
 
-  // Read the instruction aloud when a step opens (Little Maker default).
+  // Some steps have sections (e.g. Type / Colors / Add-ons), each with its own instruction.
+  const [sectionByStep, setSectionByStep] = useState({})
+  const section = sectionByStep[current.id] ?? view?.sections?.[0].id
+  const instruction = view?.sections?.find((s) => s.id === section)?.instruction ?? current.instruction
+
+  // Read the instruction aloud when it changes (Little Maker default).
   useEffect(() => {
-    if (readAloud && !muted) speak(current.instruction)
-  }, [current, readAloud, muted])
+    if (readAloud && !muted) speak(instruction)
+  }, [instruction, readAloud, muted])
+
+  const [party, setParty] = useState(0)
 
   // Slide direction follows step order.
   const prevStep = useRef(step)
@@ -37,15 +55,12 @@ export default function MakerScreen({ onGoToStep, onBack }) {
   const swipe = useEdgeSwipeBack(platform === 'ios' && isStandalone(), onBack)
 
   return (
-    <div className="flex min-h-dvh flex-col" {...swipe}>
+    // Fixed-height app layout; if huge text makes it overflow, the whole screen scrolls instead.
+    <div className="flex h-dvh flex-col overflow-y-auto" {...swipe}>
+      {party > 0 && <Confetti key={party} />}
       <AppBar title={current.title} onBack={onBack} backLabel={step === 0 ? 'Home' : STEPS[step - 1].label} />
 
       <StepTabs step={step} furthest={furthest} onSelect={onGoToStep} />
-
-      <div className="flex items-center justify-center gap-3 px-[max(var(--gutter),env(safe-area-inset-left))] pt-4">
-        <IconButton icon="speak" label="Read it to me" onClick={() => speak(current.instruction)} />
-        <p className="font-display text-[length:var(--text-title)] font-semibold text-ink">{current.instruction}</p>
-      </div>
 
       <AnimatePresence mode="popLayout" initial={false} custom={direction}>
         <motion.main
@@ -55,29 +70,56 @@ export default function MakerScreen({ onGoToStep, onBack }) {
           animate={{ x: 0, opacity: 1 }}
           exit={reduce ? { opacity: 0 } : { x: `${direction * -30}%`, opacity: 0 }}
           transition={transitions[platform].page}
-          className="grid flex-1 gap-4 p-[var(--gutter)] md:landscape:grid-cols-[1fr_minmax(20rem,40%)]"
+          className="flex min-h-[360px] flex-1 flex-col gap-3 px-[max(var(--gutter),env(safe-area-inset-left))] pt-3
+            md:landscape:grid md:landscape:grid-cols-[1fr_minmax(22rem,42%)] md:landscape:gap-5"
         >
-          {/* Stage: the live preview / play area (custom game look) */}
           <section
             aria-label="Squishy preview"
-            className="grid min-h-64 place-items-center rounded-[var(--radius-card)] bg-white/60 shadow-[var(--shadow-soft)]"
+            className="flex h-[46%] min-h-[210px] shrink-0 flex-col rounded-[var(--radius-card)] bg-white/60 p-2
+              shadow-[var(--shadow-soft)] md:landscape:h-auto"
           >
-            <div className="flex flex-col items-center gap-2 p-6 text-center text-ink-soft">
-              <Icon name={current.icon} size={88} />
-              <p className="flex items-center gap-2 text-[length:var(--text-body)]">
-                <Icon name="sparkle" size={22} filled /> Coming soon!
-              </p>
+            <div className="flex items-center gap-2">
+              <IconButton icon="speak" label="Read it to me" onClick={() => speak(instruction)} />
+              <p className="font-display text-[length:var(--text-title)] leading-tight font-semibold text-ink">{instruction}</p>
+            </div>
+            {/* the preview fills whatever height is left */}
+            <div className="relative min-h-0 flex-1">
+              {view ? (
+                <div className="absolute inset-0">
+                  <view.Stage draft={draft} />
+                </div>
+              ) : (
+                <div className="flex h-full flex-col items-center justify-center gap-2 p-4 text-center text-ink-soft">
+                  <Icon name={current.icon} size={88} />
+                  <p className="flex items-center gap-2 text-[length:var(--text-body)]">
+                    <Icon name="sparkle" size={22} filled /> Coming soon!
+                  </p>
+                </div>
+              )}
             </div>
           </section>
 
-          {/* Panel: option pickers arrive in Phases 2–3 */}
-          <section aria-label="Choices" className="hidden md:landscape:block" />
+          {view && (
+            <section
+              aria-label="Choices"
+              className={`min-h-[180px] flex-1 overflow-y-auto p-3 md:landscape:rounded-[var(--radius-card)] ${
+                platform === 'ios'
+                  ? 'rounded-t-[1.75rem] bg-white/85 backdrop-blur-xl'
+                  : 'rounded-t-[28px] bg-[var(--md-sys-color-surface-container)]'
+              }`}
+            >
+              <view.Panel
+                section={section}
+                onSection={(id) => setSectionByStep((m) => ({ ...m, [current.id]: id }))}
+              />
+            </section>
+          )}
         </motion.main>
       </AnimatePresence>
 
       <footer
-        className="flex items-center justify-between gap-4 px-[max(var(--gutter),env(safe-area-inset-left))]
-          pt-2 pb-[max(1.5rem,calc(env(safe-area-inset-bottom)+0.75rem))]"
+        className="sticky bottom-0 z-10 flex items-center justify-between gap-4 bg-gradient-to-t from-cream via-cream/90
+          px-[max(var(--gutter),env(safe-area-inset-left))] pt-2 pb-[max(1rem,calc(env(safe-area-inset-bottom)+0.5rem))]"
       >
         <IconButton
           icon="undo"
@@ -90,6 +132,8 @@ export default function MakerScreen({ onGoToStep, onBack }) {
             icon="arrowNext"
             onClick={() => {
               tick()
+              jingle()
+              setParty((n) => n + 1)
               onGoToStep(step + 1)
             }}
           >

@@ -38,3 +38,23 @@ export function pop(pitch = 1) {
   osc.start(t)
   osc.stop(t + 0.18)
 }
+
+// A short happy jingle (rising major arpeggio) for finishing a step.
+export function jingle() {
+  if (muted) return
+  const ac = audio()
+  const t = ac.currentTime
+  ;[523.25, 659.25, 783.99, 1046.5].forEach((freq, i) => {
+    const osc = ac.createOscillator()
+    const gain = ac.createGain()
+    const start = t + i * 0.11
+    osc.type = 'triangle'
+    osc.frequency.value = freq
+    gain.gain.setValueAtTime(0.0001, start)
+    gain.gain.exponentialRampToValueAtTime(0.5, start + 0.02)
+    gain.gain.exponentialRampToValueAtTime(0.0001, start + 0.35)
+    osc.connect(gain).connect(master)
+    osc.start(start)
+    osc.stop(start + 0.4)
+  })
+}

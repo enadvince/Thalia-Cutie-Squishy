@@ -5,25 +5,35 @@ import { setMuted } from '../lib/audio'
 // All state lives here and autosaves to localStorage. Nothing leaves the device.
 const STORAGE_KEY = 'thalia-squishies:v1'
 
+// A new squishy starts as pink slime so the preview is never empty and Next always works.
+export const DEFAULT_DRAFT = { fillingType: 'slime', fillingColors: ['bubblegum-pop'], addons: [] }
+
 const initialState = {
   settings: { mode: 'little', muted: false, readAloud: MODES.little.readAloudDefault },
   // `draft` is the squishy being made; `past` holds earlier drafts for Undo.
-  maker: { step: 0, furthest: 0, draft: {}, past: [] },
+  maker: { step: 0, furthest: 0, draft: DEFAULT_DRAFT, past: [] },
+}
+
+// Testing only, until the parent gate (Phase 7) can switch modes: ?mode=big or ?mode=little.
+function withModeOverride(state) {
+  const mode = new URLSearchParams(window.location.search).get('mode')
+  if (!MODES[mode]) return state
+  return { ...state, settings: { ...state.settings, mode, readAloud: MODES[mode].readAloudDefault } }
 }
 
 function load() {
   try {
     const saved = JSON.parse(localStorage.getItem(STORAGE_KEY))
     if (saved) {
-      return {
+      return withModeOverride({
         settings: { ...initialState.settings, ...saved.settings },
-        maker: { ...initialState.maker, ...saved.maker },
-      }
+        maker: { ...initialState.maker, ...saved.maker, draft: { ...DEFAULT_DRAFT, ...saved.maker?.draft } },
+      })
     }
   } catch {
     // Storage unavailable or corrupt: start fresh.
   }
-  return initialState
+  return withModeOverride(initialState)
 }
 
 function reducer(state, action) {
