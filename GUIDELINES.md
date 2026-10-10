@@ -1,0 +1,57 @@
+# Guidelines checklist
+
+Sources reviewed: Apple Human Interface Guidelines (incl. *Designing for kids*, *Games*, *Accessibility*, *Typography*, *Layout*, *Motion*, *Playing haptics*) and Material Design 3 (incl. *Accessibility*, *Adaptive layout / window size classes*, *Motion: easing & duration*, *Color roles / dynamic color*, *FAB*, *Top app bar*, *Bottom sheets*, *Dialogs*). Plus App Store Kids Category (5.1.4 / 1.3) and Google Play Families Policy.
+
+**Rule of precedence:** on iOS follow HIG and on Android follow M3. Controls and navigation follow the platform guideline. The candy look applies only to the play area and artwork.
+
+Legend: ✅ verified · 🔜 lands in a later phase (phase number) · 🤖 checked automatically by `npm run verify`
+
+## Every screen
+
+| # | Check | How verified |
+|---|---|---|
+| T1 | Touch targets ≥ 44×44pt (iOS) / 48×48dp (Android); our default is 56px | 🤖 target-size check on every button |
+| T2 | Body text ≥ 18px, labels ≥ 16px at default scale | 🤖 font-size check on all text |
+| T3 | Contrast WCAG AA (4.5:1 text, 3:1 large text/UI) | 🤖 axe `wcag2aa` |
+| T4 | Every control has a VoiceOver/TalkBack name | 🤖 accessible-name check + axe |
+| T5 | Color is never the only signal (icon + name on every option) | Manual review per screen |
+| T6 | Instructions under 6 words; no reading needed to progress | `src/data/steps.js` review; icons on every step |
+| T7 | Text scaling to 200% doesn't break layouts | 🤖 `*-text200` profiles: no horizontal scroll, all targets intact |
+| T8 | Safe areas respected; no controls in system gesture zones | `env(safe-area-inset-*)` on bars; 24px side gutter keeps controls out of Android edge-back zones; bottom bar sits above home indicator/gesture bar |
+| T9 | Reduce motion respected | `MotionConfig reducedMotion="user"` + CSS media query; 🤖 `pixel-reducedmotion` profile |
+| T10 | No flashing/strobing (nothing > 3 flashes/sec) | Manual: only slow wobble (2.6s loop) |
+| T11 | Undo always visible | Footer on every maker step |
+| T12 | Mute toggle always visible | Title screen + every app bar |
+| T13 | Portrait + landscape on tablets; portrait-first on phones | 🤖 iPad/Android-tablet landscape profiles |
+| T14 | No ads, analytics, external links, or data leaving the device | No network code; `package.json` has no SDKs |
+
+## Platform chrome
+
+| # | iOS (HIG) | Android (M3) | Status |
+|---|---|---|---|
+| P1 | Nav bar: centered title, chevron + back label, translucent material | Small top app bar: leading back icon button, start-aligned title | ✅ `AppBar.jsx` |
+| P2 | Back: swipe from left edge (Safari native; custom in standalone PWA) | System back / predictive back via browser history | ✅ history API + `useEdgeSwipeBack` · 🤖 back walks to title |
+| P3 | Primary action: filled capsule button | Extended FAB (primary-container) | ✅ `PrimaryButton` |
+| P4 | UI font: SF Pro (`-apple-system`) | UI font: Roboto | ✅ `--chrome-font` |
+| P5 | Dynamic Type (`font: -apple-system-body` drives rem) | Font scale (rem follows browser text size) | ✅ |
+| P6 | Motion: springs | M3 easing/duration tokens | ✅ `lib/motion.js`, `tokens.css` |
+| P7 | Pickers in sheets | Pickers in bottom sheets | 🔜 2–3 |
+| P8 | Alerts per HIG | M3 dialogs | 🔜 6–7 |
+| P9 | Haptics: light only (Safari has no vibrate API, so it's a no-op) | Light `vibrate(10)` tick, never continuous | ✅ step advance · 🔜 5 |
+| P10 | Color: candy palette mapped to M3 color roles ("dynamic color" tokens) | | ✅ `tokens.css` |
+
+## Kids store policies
+
+| # | Check | Status |
+|---|---|---|
+| K1 | Parent gate (3s hold + spelled-out 2-digit multiplication) before settings/reset/external | 🔜 7 |
+| K2 | No third-party analytics/ads SDKs | ✅ |
+| K3 | COPPA-safe: localStorage only, no accounts | ✅ |
+| K4 | Playtime reminder | 🔜 7 |
+| K5 | Text input via allow-list or presets only | 🔜 5–6 |
+
+## Phase sign-off log
+
+| Phase | Screens | Result |
+|---|---|---|
+| 1 | Title, Maker shell (4 steps) | ✅ `npm run verify`: 7 profiles × 5 screens with no problems. Manual screenshot review done. |
