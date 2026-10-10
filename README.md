@@ -48,7 +48,14 @@ npm run verify       # screenshots land in verify-out/
    ```js
    { id: 'my-sticker', name: 'My Sticker', image: 'my-sticker.svg', unlock: 'starter' },
    ```
-   Use `unlock: { stars: 10 }` instead to show it as a locked silhouette ("Coming soon!") until 10 stars are earned (stars arrive in Phase 6).
+   Use `unlock: { stars: 10 }` instead to show it as a locked silhouette ("Coming soon!") until 10 stars are earned. Bonus add-ons in `addons.js` use the same `unlock` field.
+
+## Stars, badges and unlocks
+
+- **Stars:** +1 for each new squishy saved, +3 for each badge. Stars never go down, even if a squishy is deleted.
+- **Badges** (`src/data/badges.js`) reward exploring, never skill. Each has a `test` and a "Try:" hint shown until it's earned. `challenge: true` badges only appear in Big Maker.
+- **Unlocks:** anything with `unlock: { stars: N }` opens when she reaches N stars, with a celebration popup.
+- **Daily surprise:** `SURPRISE_ADDONS` in `addons.js`. One is picked from the date each day; add more by adding entries (and their art in `AddonArt.jsx`).
 
 ## Build phases
 
@@ -57,6 +64,6 @@ npm run verify       # screenshots land in verify-out/
 3. ✅ Step 2: casing, sprays, scents, locked stickers
 4. ✅ Step 3: fill interaction
 5. ✅ Step 4: play physics + sounds
-6. Shelf, stars, badges, unlocks, daily surprise
+6. ✅ Shelf, stars, badges, unlocks, daily surprise
 7. Guardrails, parent gate, PWA/offline, accessibility pass
 8. Higgsfield asset pass + polish

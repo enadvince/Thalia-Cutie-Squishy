@@ -21,6 +21,9 @@ const PROFILES = [
   { name: 'ipad-bigmaker', platform: 'ios', device: devices['iPad Pro 11 landscape'], mode: 'big' },
 ]
 
+// ONLY=iphone-portrait npm run verify  → run just the named profile(s)
+const ONLY = process.env.ONLY?.split(',')
+
 const MIN_TARGET = { ios: 44, android: 48 }
 const problems = []
 const browser = await chromium.launch({ executablePath: '/opt/pw-browsers/chromium' })
@@ -56,7 +59,7 @@ async function check(page, profile, label) {
   console.log(`${result.length ? '✗' : '✓'} ${profile.name} / ${label}`)
 }
 
-for (const profile of PROFILES) {
+for (const profile of PROFILES.filter((p) => !ONLY || ONLY.includes(p.name))) {
   const context = await browser.newContext({ ...profile.device, reducedMotion: profile.reducedMotion ?? 'no-preference' })
   const page = await context.newPage()
   page.on('pageerror', (e) => problems.push(`[${profile.name}] page error: ${e.message}`))
@@ -222,6 +225,16 @@ async function stepThree(page, profile) {
   await check(page, profile, 'step3-full')
 }
 
+// Rewards can pop up after any save; tap "Yay!" until they're all seen.
+async function dismissCelebrations(page) {
+  const party = page.getByRole('alertdialog')
+  for (let i = 0; i < 10; i++) {
+    await page.waitForTimeout(300)
+    if (!(await party.count())) return
+    await party.getByRole('button', { name: 'Yay!' }).click()
+  }
+}
+
 function shelfOf(page) {
   return page.evaluate(() => JSON.parse(localStorage.getItem('thalia-squishies:v1')).shelf)
 }
@@ -261,12 +274,10 @@ async function stepFour(page, profile) {
   await party.waitFor({ timeout: 3000 }).catch(() => fail('no celebration for the first badge'))
   if (!(await party.textContent()).includes('First Squishy!')) fail('the first celebration was not the First Squishy! badge')
   await check(page, profile, 'step4-celebration')
-  while (await party.count()) {
-    await party.getByRole('button', { name: 'Yay!' }).click()
-    await page.waitForTimeout(250)
-  }
+  await dismissCelebrations(page)
   if (!(await page.getByRole('button', { name: 'On my Shelf!' }).isVisible())) fail('saved state not shown')
 
+  await dismissCelebrations(page)
   await page.getByRole('button', { name: 'Rename my squishy' }).click()
   const dialog = page.getByRole('dialog')
   await dialog.waitFor()
@@ -286,6 +297,7 @@ async function stepFour(page, profile) {
   await dialog.waitFor({ state: 'detached' })
   if (!(await page.getByRole('heading', { name: expected }).isVisible())) fail(`name did not change to ${expected}`)
   if ((await shelfOf(page))[0]?.name !== expected) fail('renaming a saved squishy did not update the Shelf')
+  await dismissCelebrations(page)
   await check(page, profile, 'step4-saved')
 }
 
@@ -294,6 +306,7 @@ async function makeAnother(page, profile) {
   const fail = (msg) => problems.push(`[${profile.name} / make another] ${msg}`)
   await page.getByRole('button', { name: /make/i }).click()
   await page.getByRole('button', { name: 'Step 4: Play' }).click()
+  await dismissCelebrations(page)
   await page.getByRole('button', { name: 'Make another' }).click()
   await page.waitForTimeout(400)
   if (!(await page.getByRole('button', { name: 'Step 1: Filling' }).getAttribute('aria-current'))) fail('did not go back to Step 1')
@@ -305,12 +318,14 @@ async function makeAnother(page, profile) {
 // Shelf: stars on the title, play a saved squishy again, badges, delete with confirmation.
 async function shelfFlow(page, profile) {
   const fail = (msg) => problems.push(`[${profile.name} / shelf] ${msg}`)
-  for (let i = 0; i < 8 && !(await page.getByRole('button', { name: 'My Shelf' }).isVisible()); i++) await page.goBack()
+  await dismissCelebrations(page)
+  const shelfButton = page.getByRole('button', { name: 'My Shelf', exact: true })
+  for (let i = 0; i < 20 && !(await shelfButton.isVisible()); i++) await page.goBack()
   const stars = await page.evaluate(() => JSON.parse(localStorage.getItem('thalia-squishies:v1')).stars)
   if (stars < 4) fail(`expected at least 4 stars after the first save, got ${stars}`)
   if (!(await page.getByRole('img', { name: `${stars} stars` }).isVisible())) fail('stars not shown on the title screen')
 
-  await page.getByRole('button', { name: 'My Shelf' }).click()
+  await shelfButton.click()
   await check(page, profile, 'shelf')
   const cards = page.getByRole('button', { name: /^Play with / })
   if ((await cards.count()) !== 1) fail(`expected 1 squishy on the shelf, got ${await cards.count()}`)
