@@ -16,6 +16,7 @@ export const DEFAULT_DRAFT = {
   scent: 'bubble-gum',
   casingType: 'gel',
   shape: 'dumpling',
+  fill: 0,
 }
 
 const initialState = {

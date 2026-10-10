@@ -73,7 +73,8 @@ for (const profile of PROFILES) {
   await stepOne(page, profile)
   for (let i = 1; i <= 4; i++) {
     if (i === 2) await stepTwo(page, profile)
-    else if (i > 2) await check(page, profile, `step${i}`)
+    else if (i === 3) await stepThree(page, profile)
+    else await check(page, profile, `step${i}`)
     if (i < 4) await page.getByRole('button', { name: /^next/i }).click()
   }
   // System back should walk back through steps, then to the title.
@@ -167,6 +168,54 @@ async function stepTwo(page, profile) {
   }
   await panel.getByRole('button', { name: 'Kitty' }).click()
   await check(page, profile, 'step2-shape')
+}
+
+// Step 3: fill by dragging the piping bag and by holding FILL!; Undo; full and overfull.
+async function stepThree(page, profile) {
+  const fail = (msg) => problems.push(`[${profile.name} / step3] ${msg}`)
+  const meter = page.getByRole('progressbar', { name: 'How full your squishy is' })
+  const level = async () => Number(await meter.getAttribute('aria-valuenow'))
+  const center = async (locator) => {
+    await locator.evaluate((el) => el.scrollIntoView({ block: 'center' }))
+    const b = await locator.boundingBox()
+    return { x: b.x + b.width / 2, y: b.y + b.height / 2 }
+  }
+  const hold = async (ms) => {
+    const c = await center(page.getByRole('button', { name: /^Fill!/ }))
+    await page.mouse.move(c.x, c.y)
+    await page.mouse.down()
+    await page.waitForTimeout(ms)
+    await page.mouse.up()
+    await page.waitForTimeout(150)
+  }
+
+  await check(page, profile, 'step3-empty')
+  if ((await level()) !== 0) fail('a new squishy should start empty')
+
+  // Drag the piping bag onto the casing and hold it there.
+  const bag = await center(page.getByRole('img', { name: /Piping bag/ }))
+  const target = await center(page.getByRole('img', { name: /squishy with/ }))
+  await page.mouse.move(bag.x, bag.y)
+  await page.mouse.down()
+  await page.mouse.move(target.x, target.y, { steps: 12 })
+  await page.waitForTimeout(1200)
+  await page.mouse.up()
+  await page.waitForTimeout(300)
+  if ((await level()) <= 10) fail(`dragging the bag onto the squishy did not fill it (level ${await level()})`)
+
+  await page.getByRole('button', { name: 'Undo' }).click()
+  if ((await level()) !== 0) fail(`Undo did not empty the squishy (level ${await level()})`)
+
+  await hold(1500)
+  const half = await level()
+  if (half < 30 || half > 70) fail(`holding FILL! for 1.5s gave ${half}%, expected about half`)
+  await check(page, profile, 'step3-half')
+
+  await hold(3600)
+  if ((await level()) !== 100) fail(`holding FILL! longer did not fill it (level ${await level()})`)
+  await hold(800)
+  if (!(await meter.getAttribute('aria-valuetext')).includes('extra')) fail('overfilling did not show the extra-squishy state')
+  await check(page, profile, 'step3-full')
 }
 
 console.log(problems.length ? `\n${problems.length} problem(s):\n${problems.join('\n')}` : '\nAll checks passed.')

@@ -47,7 +47,7 @@ npm run verify       # screenshots land in verify-out/
 1. ✅ Setup, design tokens, title screen, 4-step stepper shell, research summary
 2. ✅ Step 1: filling + live preview jar
 3. ✅ Step 2: casing, sprays, scents, locked stickers
-4. Step 3: fill interaction
+4. ✅ Step 3: fill interaction
 5. Step 4: play physics + sounds
 6. Shelf, stars, badges, unlocks, daily surprise
 7. Guardrails, parent gate, PWA/offline, accessibility pass

@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { Fragment, useEffect, useRef, useState } from 'react'
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
 import { STEPS } from '../data/steps'
 import { useGame } from '../state/GameContext'
@@ -17,12 +17,14 @@ import FillingJar from '../components/FillingJar'
 import FillingPanel, { FILLING_SECTIONS } from '../steps/FillingPanel'
 import SquishyView from '../components/SquishyView'
 import CasingPanel, { CASING_SECTIONS } from '../steps/CasingPanel'
+import { FillProvider, FillStage, FillPanel } from '../steps/FillStep'
 
 // What each step shows: Stage = live preview (custom game look), Panel = pickers (platform sheet).
 // Steps without a view yet show a "Coming soon!" placeholder.
 const STEP_VIEWS = {
   filling: { Stage: FillingJar, Panel: FillingPanel, sections: FILLING_SECTIONS },
   casing: { Stage: SquishyView, Panel: CasingPanel, sections: CASING_SECTIONS },
+  fill: { Stage: FillStage, Panel: FillPanel, Provider: FillProvider },
 }
 
 // The 4-step maker shell.
@@ -35,6 +37,7 @@ export default function MakerScreen({ onGoToStep, onBack }) {
   const current = STEPS[step]
   const isLast = step === STEPS.length - 1
   const view = STEP_VIEWS[current.id]
+  const StepProvider = view?.Provider ?? Fragment // shares live state between a step's Stage and Panel
 
   // Some steps have sections (e.g. Type / Colors / Add-ons), each with its own instruction.
   const [sectionByStep, setSectionByStep] = useState({})
@@ -76,6 +79,7 @@ export default function MakerScreen({ onGoToStep, onBack }) {
           className="flex min-h-[360px] flex-1 flex-col gap-3 px-[max(var(--gutter),env(safe-area-inset-left))] pt-3
             md:landscape:grid md:landscape:grid-cols-[1fr_minmax(22rem,42%)] md:landscape:gap-5"
         >
+          <StepProvider>
           <section
             aria-label="Squishy preview"
             className="flex h-[46%] min-h-[210px] shrink-0 flex-col rounded-[var(--radius-card)] bg-white/60 p-2
@@ -117,6 +121,7 @@ export default function MakerScreen({ onGoToStep, onBack }) {
               />
             </section>
           )}
+          </StepProvider>
         </motion.main>
       </AnimatePresence>
 
