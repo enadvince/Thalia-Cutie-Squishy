@@ -13,6 +13,15 @@ Testing switches (URL only, until the parent gate arrives in Phase 7):
 - `?platform=ios` or `?platform=android` forces a platform's look
 - `?mode=big` or `?mode=little` picks Big Maker or Little Maker
 
+## Test on an Android phone (APK)
+
+The game is wrapped as an Android app with [Capacitor](https://capacitorjs.com) (`capacitor.config.json`, `android/`).
+
+- **From GitHub:** every push runs the "Android test APK" workflow. Open the run on the Actions tab, download `cutie-squishies-apk` under Artifacts, unzip it, and open `app-debug.apk` on the phone (allow "Install unknown apps" when asked).
+- **Locally** (needs Android Studio): `npm run build && npx cap sync android`, then `cd android && ./gradlew assembleDebug`. The APK lands in `android/app/build/outputs/apk/debug/`.
+
+After changing the game, always `npm run build && npx cap sync android` before building the app.
+
 ## Verify a phase
 
 ```bash
