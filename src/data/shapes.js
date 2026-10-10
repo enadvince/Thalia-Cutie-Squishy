@@ -21,7 +21,7 @@ export const SHAPES = [
     face: { x: 130, y: 112, s: 0.9 }, decor: 'tentacles',
   },
   {
-    id: 'blocky-buddy', attach: [130, 30], name: 'Blocky Buddy',
+    id: 'blocky-buddy', attach: [130, 30], label: [130, 160, 80, 22], name: 'Blocky Buddy',
     parts: [
       { r: [70, 30, 120, 104, 8] }, { r: [86, 130, 88, 66, 6] },
       { r: [54, 136, 34, 50, 6] }, { r: [172, 136, 34, 50, 6] },
@@ -30,7 +30,7 @@ export const SHAPES = [
     face: { x: 130, y: 86, s: 0.9, pixel: true },
   },
   {
-    id: 'axolotl', attach: [130, 72], name: 'Axolotl',
+    id: 'axolotl', attach: [130, 72], label: [130, 194, 120, 26], name: 'Axolotl',
     parts: [{ e: [130, 146, 94, 74] }, { e: [80, 214, 22, 14] }, { e: [180, 214, 22, 14] }],
     face: { x: 130, y: 150, s: 1 }, decor: 'gills',
   },
@@ -41,7 +41,7 @@ export const SHAPES = [
   },
   { id: 'rectangle', attach: [130, 64], name: 'Rectangle', parts: [{ r: [18, 64, 224, 152, 30] }], face: { x: 130, y: 144, s: 1 } },
   {
-    id: 'heart', attach: [130, 78], name: 'Heart',
+    id: 'heart', attach: [130, 78], label: [130, 168, 96, 22], name: 'Heart',
     parts: [{ d: 'M130 226C130 226 26 162 26 96a54 54 0 01104-20 54 54 0 01104 20c0 66-104 130-104 130z' }],
     face: { x: 130, y: 128, s: 0.9 },
   },
@@ -61,7 +61,7 @@ export const SHAPES = [
     face: { x: 130, y: 144, s: 1 },
   },
   {
-    id: 'puppy', attach: [130, 64], name: 'Puppy',
+    id: 'puppy', attach: [130, 64], label: [130, 192, 108, 22], name: 'Puppy',
     parts: [{ c: [130, 144, 80] }, { e: [44, 150, 26, 50, 22] }, { e: [216, 150, 26, 50, -22] }],
     face: { x: 130, y: 150, s: 1 }, decor: 'snout',
   },
@@ -71,7 +71,7 @@ export const SHAPES = [
     face: { x: 130, y: 174, s: 0.75 },
   },
   {
-    id: 'kitty', attach: [130, 74], name: 'Kitty',
+    id: 'kitty', attach: [130, 74], label: [130, 198, 118, 24], name: 'Kitty',
     parts: [{ e: [130, 150, 94, 76] }, { d: 'M48 118L58 38L114 82Z' }, { d: 'M212 118L202 38L146 82Z' }],
     face: { x: 130, y: 154, s: 1 }, decor: 'whiskers',
   },
@@ -84,7 +84,7 @@ export const SHAPES = [
     face: { x: 130, y: 82, s: 0.62 },
   },
   {
-    id: 'diamond', attach: [130, 40], name: 'Diamond',
+    id: 'diamond', attach: [130, 40], label: [130, 72, 150, 24], name: 'Diamond',
     parts: [{ d: 'M72 40H188L236 98L130 232L24 98Z' }],
     face: { x: 130, y: 126, s: 0.75 }, decor: 'facets',
   },
@@ -105,7 +105,7 @@ export const SHAPES = [
   },
   {
     // A big gooey splat (like a spoonful dropped on the table) with a few drops around it.
-    id: 'spoon-splat', attach: [130, 50], name: 'Spoon Splat',
+    id: 'spoon-splat', attach: [130, 50], label: [130, 186, 108, 22], name: 'Spoon Splat',
     parts: [
       { d: 'M117 64Q130 48 144 62Q157 75 172 78Q188 80 189 96Q189 111 213 118Q236 125 224 140Q211 155 211 170Q211 184 194 188Q176 191 170 210Q165 228 147 220Q130 212 115 214Q100 216 93 202Q87 188 63 189Q38 190 44 172Q51 155 45 141Q39 128 54 119Q69 111 68 92Q67 74 86 77Q105 79 117 64Z' },
       { c: [30, 92, 9] }, { c: [232, 212, 8] }, { c: [222, 66, 6] },
