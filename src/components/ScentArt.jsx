@@ -61,10 +61,12 @@ const ART = {
       <circle cx="4" cy="-6" r="1.6" fill="#ff5a7a" />
     </>
   ),
-  crown: (
+  orangeFizz: (
     <>
-      <path d="M-7 4L-8 -4L-3 0L0 -6L3 0L8 -4L7 4Z" fill="#ffd84d" stroke="#c9a205" strokeWidth="0.7" strokeLinejoin="round" />
-      <circle cx="0" cy="1" r="1.3" fill="#7b4fd6" />
+      <circle cx="-3" cy="2" r="3.6" fill="#ffb37a" fillOpacity="0.55" stroke="#f37114" strokeWidth="1" />
+      <circle cx="3" cy="-3" r="2.6" fill="#ffd8b0" fillOpacity="0.6" stroke="#f37114" strokeWidth="1" />
+      <circle cx="4" cy="4" r="1.6" fill="#ffb37a" fillOpacity="0.6" stroke="#f37114" strokeWidth="0.8" />
+      <circle cx="-4" cy="0.5" r="1" fill="#fff" />
     </>
   ),
 }

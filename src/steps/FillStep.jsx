@@ -1,7 +1,7 @@
 import { createContext, useContext, useEffect, useRef, useState } from 'react'
 import { motion } from 'framer-motion'
 import { useGame } from '../state/GameContext'
-import { squelch, sparkle, boing } from '../lib/audio'
+import { squelch, sparkle, boing, gloop } from '../lib/audio'
 import { speak } from '../lib/speech'
 import { tick } from '../lib/haptics'
 import SquishyView from '../components/SquishyView'
@@ -48,6 +48,7 @@ export function FillProvider({ children }) {
     if (!pouring) return
     let last = performance.now()
     let lastSquelch = 0
+    let lastGloop = 0
     let lastBoing = 0
     let raf
     const step = (now) => {
@@ -60,9 +61,14 @@ export function FillProvider({ children }) {
         setJiggles((j) => j + 1)
         lastBoing = now
       }
+      // Pouring sounds: a wet squelch plus bubbly gloops, rising as it fills.
       if (next < 1 && now - lastSquelch > 150) {
         squelch(next)
         lastSquelch = now
+      }
+      if (next < 1 && now - lastGloop > 230) {
+        gloop(next)
+        lastGloop = now
       }
       fillRef.current = next
       setFill(next)
@@ -78,6 +84,7 @@ export function FillProvider({ children }) {
     pouringRef.current = true
     startFill.current = fillRef.current
     squelch(fillRef.current)
+    gloop(fillRef.current)
     setPouring(true)
   }
 

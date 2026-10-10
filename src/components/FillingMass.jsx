@@ -18,21 +18,42 @@ function spiralPath(cx, cy, offset) {
 
 const BIG_ART = new Set(['cloudPuppy', 'bowKitty', 'bunnyImp', 'pinkLamb', 'sunnyPup', 'pompom'])
 
+// How many add-on pieces float in a squishy in total, however many add-ons she picks.
+export const MAX_PIECES = 36
+const VARIATION = 0.05 // each add-on's share wobbles by up to ±5 percentage points
+
+// Splits 100% between the picked add-ons: an equal share each ± 5%, and the last one gets
+// whatever is left. Seeded by the combination, so the same picks always look the same.
+export function addonShares(addons) {
+  const n = addons.length
+  const rand = seeded(addons.join('|'))
+  const shares = []
+  let left = 1
+  for (let i = 0; i < n - 1; i++) {
+    const share = Math.min(Math.max(1 / n + (rand() * 2 - 1) * VARIATION, 0.02), left - 0.02 * (n - 1 - i))
+    shares.push(share)
+    left -= share
+  }
+  if (n) shares.push(left)
+  return shares
+}
+
 // Where each add-on piece floats inside `box` (stable for the same add-ons). Also used by Step 4's canvas.
 export function addonPieces(addons, box, scatterTop) {
   const bottom = box.y + box.h
-  return addons.flatMap((id) => {
+  const shares = addonShares(addons)
+  return addons.flatMap((id, k) => {
     const addon = addonById(id)
     if (!addon) return []
     const rand = seeded(id)
-    return Array.from({ length: addon.count }, (_, i) => ({
+    return Array.from({ length: Math.max(1, Math.round(shares[k] * MAX_PIECES)) }, (_, i) => ({
       key: `${id}-${i}`,
       art: addon.art,
       index: i,
       x: box.x + 22 + rand() * (box.w - 44),
       y: scatterTop + rand() * (bottom - scatterTop - 20),
       rot: rand() * 60 - 30,
-      scale: BIG_ART.has(addon.art) ? 1.5 : 1.2,
+      scale: BIG_ART.has(addon.art) ? 1.3 : 1.1,
       delay: rand() * 3,
     }))
   })

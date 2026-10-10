@@ -25,7 +25,8 @@ npm run verify       # screenshots land in verify-out/
 
 ## Where things live
 
-- `src/data/*.js`: all game content: steps, modes, fillings (incl. play physics and sounds), add-ons, colors (100, generated from 10 families), sprays, scents, casing types, shapes, stickers, names (presets + typed-name allow-list). Add options here without touching components.
+- `src/data/*.js`: all game content: steps, modes, fillings (incl. play physics and sounds), add-ons, colors (100, generated from 10 families), sprays, scents, casing types, shapes (with `attach` points), accessories (keychain, bag clip…), stickers, names (presets + typed-name allow-list), badges.
+- `src/lib/speech.js`: read-aloud voice choice (clearest available) and `SAY_LIKE`, respellings for words speech engines mispronounce (e.g. Bead, Dough). Add options here without touching components.
 - `src/components/AddonArt.jsx`: the drawing for each add-on (an add-on's `art` key in `addons.js` points here).
 - `src/styles/tokens.css`: candy palette, M3 color roles, iOS roles, motion and size tokens.
 - `src/components/`: platform-adaptive chrome (`AppBar`, `Buttons`, `StepTabs`) and the `Mascot`.

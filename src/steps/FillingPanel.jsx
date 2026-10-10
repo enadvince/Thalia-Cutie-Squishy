@@ -33,6 +33,11 @@ export default function FillingPanel({ section, onSection }) {
   const { draft } = state.maker
   const { mode } = state.settings
   const choose = useChoose()
+  // Toggling something off pops (lower) but isn't read aloud.
+  const pickAddon = (a) => {
+    const off = draft.addons.includes(a.id)
+    choose({ addons: toggleCapped(draft.addons, a.id, MAX_ADDONS) }, off ? null : a.name, off ? 0.8 : 1.25)
+  }
 
   return (
     <div className="flex flex-col gap-4">
@@ -66,13 +71,14 @@ export default function FillingPanel({ section, onSection }) {
           <ColorPicker
             mode={mode}
             picked={draft.fillingColors}
-            onPick={(c) =>
+            onPick={(c) => {
+              const off = draft.fillingColors.includes(c.id)
               choose(
                 { fillingColors: toggleCapped(draft.fillingColors, c.id, MAX_FILLING_COLORS, 1) },
-                c.name,
-                1.1,
+                off ? null : c.name,
+                off ? 0.8 : 1.1,
               )
-            }
+            }}
           />
         </>
       )}
@@ -89,7 +95,7 @@ export default function FillingPanel({ section, onSection }) {
           <Grid>
             <DailySurprise
               selected={(id) => draft.addons.includes(id)}
-              onPick={(a) => choose({ addons: toggleCapped(draft.addons, a.id, MAX_ADDONS) }, a.name, 1.25)}
+              onPick={(a) => pickAddon(a)}
             />
             {ADDONS.map((a) =>
               isAddonUnlocked(a, state.stars) ? (
@@ -97,7 +103,7 @@ export default function FillingPanel({ section, onSection }) {
                   key={a.id}
                   label={a.name}
                   selected={draft.addons.includes(a.id)}
-                  onClick={() => choose({ addons: toggleCapped(draft.addons, a.id, MAX_ADDONS) }, a.name, 1.25)}
+                  onClick={() => pickAddon(a)}
                 >
                   <AddonThumb art={a.art} />
                 </OptionCard>

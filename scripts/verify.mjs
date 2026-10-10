@@ -267,6 +267,12 @@ async function stepFour(page, profile) {
 
   for (const name of ['Squish', 'Stretch', 'Poke', 'Shake']) await page.getByRole('button', { name, exact: true }).click()
 
+  // Make it a keychain (and the picture updates without errors).
+  await page.getByRole('button', { name: 'Keychain', exact: true }).click()
+  if ((await page.getByRole('button', { name: 'Keychain', exact: true }).getAttribute('aria-pressed')) !== 'true') fail('Keychain was not picked')
+  await page.waitForTimeout(1200)
+  await page.screenshot({ path: `${OUT}/${profile.name}--step4-keychain.png` })
+
   await page.getByRole('button', { name: 'Save to my Shelf' }).click()
   if ((await shelfOf(page)).length !== 1) fail('Save to my Shelf did not save')
   // The first save earns a badge (and maybe unlocks): one celebration each.

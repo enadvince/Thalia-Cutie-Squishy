@@ -19,6 +19,7 @@ export const DEFAULT_DRAFT = {
   casingType: 'gel',
   shape: 'dumpling',
   fill: 0,
+  accessory: 'none', // keychain, bag clip… (Step 4)
   name: null, // null = an automatic name (see squishyName)
   savedId: null, // set once it's on the Shelf
 }

@@ -1,5 +1,6 @@
 import { colorById } from './colors'
 import { SURPRISE_ADDONS } from './addons'
+import { SHAPES } from './shapes'
 
 // Badges reward exploring, never skill. `test(stats, squishy)` gets totals across everything
 // she has saved (see lib/rewards.js) and the squishy just saved.
@@ -10,7 +11,7 @@ export const BADGES = [
   { id: 'every-filling', name: 'Tried every filling!', icon: 'jar', hint: 'Try all 6 fillings', test: (s) => s.fillings >= 6 },
   { id: 'rainbow', name: 'Rainbow Maker', icon: 'rainbow', hint: 'Use 10 colors', test: (s) => s.colors >= 10 },
   { id: 'shapes', name: 'Shape Explorer', icon: 'shapes', hint: 'Try 5 shapes', test: (s) => s.shapes >= 5 },
-  { id: 'every-shape', name: 'Every Shape!', icon: 'star', hint: 'Try all 15 shapes', test: (s) => s.shapes >= 15 },
+  { id: 'every-shape', name: 'Every Shape!', icon: 'star', hint: `Try all ${SHAPES.length} shapes`, test: (s) => s.shapes >= SHAPES.length },
   { id: 'sniffer', name: 'Scent Sniffer', icon: 'scent', hint: 'Try 5 scents', test: (s) => s.scents >= 5 },
   { id: 'beads', name: 'Bead Collector', icon: 'bead', hint: 'Try 8 add-ons', test: (s) => s.addons >= 8 },
   { id: 'sticker', name: 'Sticker Star', icon: 'sparkle', hint: 'Use Sticker Spray', test: (s) => s.sprays.includes('sticker') },

@@ -81,13 +81,88 @@ function ShapeDecor({ decor, color }) {
         </g>
       )
     case 'butterEdges':
-      return <path d="M34 128H172V222M172 128L226 80" {...line} />
+      return <path d="M14 124H222V212M222 124L246 98" {...line} />
     case 'crust':
       return <path d="M60 104q20-14 38-6M120 92q12-10 24 0M168 98q18-6 32 8" {...line} />
     case 'snout':
       return <ellipse cx="130" cy="176" rx="30" ry="20" fill="#fff" opacity="0.35" />
     case 'whiskers':
       return <path d="M60 166H28M62 178L32 188M200 166H232M198 178L228 188" {...line} />
+    default:
+      return null
+  }
+}
+
+const METAL = '#c7cedd'
+const METAL_DARK = '#8f99b0'
+
+// Keychain, bag clip, necklace or phone charm, hanging from `at` (the top of the shape).
+export function Accessory({ kind, at }) {
+  const [x, y] = at
+  const len = Math.min(58, y + 12) // keep it inside the picture
+  const top = y - len
+  const cap = <rect x={x - 9} y={y - 7} width="18" height="10" rx="3" fill={METAL} stroke={METAL_DARK} strokeWidth="1.5" />
+  const links = (from, to) => {
+    const out = []
+    for (let cy = from, i = 0; cy > to; cy -= 9, i++) {
+      out.push(
+        i % 2 ? (
+          <rect key={cy} x={x - 1.5} y={cy - 6} width="3" height="11" rx="1.5" fill={METAL} stroke={METAL_DARK} strokeWidth="1" />
+        ) : (
+          <ellipse key={cy} cx={x} cy={cy} rx="3.5" ry="6" fill="none" stroke={METAL} strokeWidth="2.5" />
+        ),
+      )
+    }
+    return out
+  }
+  switch (kind) {
+    case 'keychain':
+      return (
+        <g>
+          {links(y - 12, top + 22)}
+          <circle cx={x} cy={top + 10} r="13" fill="none" stroke={METAL} strokeWidth="4.5" />
+          <circle cx={x} cy={top + 10} r="13" fill="none" stroke={METAL_DARK} strokeWidth="1" strokeOpacity="0.6" />
+          <path d={`M${x - 9} ${top + 2}a12 12 0 0 1 9 -4`} fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" />
+          {cap}
+        </g>
+      )
+    case 'bag-clip':
+      return (
+        <g>
+          {links(y - 12, top + 26)}
+          <rect x={x - 10} y={top} width="20" height="28" rx="10" fill="none" stroke="#a98bff" strokeWidth="5" />
+          <path d={`M${x + 10} ${top + 9}v10`} stroke="#fff" strokeWidth="3" strokeLinecap="round" />
+          {cap}
+        </g>
+      )
+    case 'necklace': {
+      const beads = [0.25, 0.5, 0.75].flatMap((t) => [
+        [x - 70 * t, y - 6 - (y + 14) * t],
+        [x + 70 * t, y - 6 - (y + 14) * t],
+      ])
+      return (
+        <g>
+          <path d={`M${x - 70} -20L${x} ${y - 6}L${x + 70} -20`} fill="none" stroke="#ff9fd2" strokeWidth="3.5" strokeLinejoin="round" />
+          {beads.map(([bx, by], i) => (
+            <circle key={i} cx={bx} cy={by} r="5" fill={['#ffd84d', '#9eede5', '#d4bfff'][i % 3]} stroke="#fff" strokeWidth="1.2" />
+          ))}
+          {cap}
+        </g>
+      )
+    }
+    case 'phone-charm': {
+      const beads = []
+      for (let cy = y - 13, i = 0; cy > top + 16; cy -= 9.5, i++) beads.push([cy, ['#ff7eb6', '#9eede5', '#ffd84d', '#a98bff'][i % 4]])
+      return (
+        <g>
+          <ellipse cx={x} cy={top + 9} rx="8" ry="11" fill="none" stroke="#ff9fd2" strokeWidth="3" />
+          {beads.map(([cy, c]) => (
+            <circle key={cy} cx={x} cy={cy} r="4.8" fill={c} stroke="#fff" strokeWidth="1.2" />
+          ))}
+          {cap}
+        </g>
+      )
+    }
     default:
       return null
   }
@@ -259,6 +334,7 @@ export default function SquishyView({ draft, fill, jiggle = 0, burst = 0, still 
                   </g>
                   {!['tentacles', 'gills'].includes(shape.decor) && <ShapeDecor decor={shape.decor} />}
                   {shape.face && <Face face={shape.face} />}
+                  {draft.accessory && draft.accessory !== 'none' && <Accessory kind={draft.accessory} at={shape.attach} />}
                 </>
               )}
             </motion.g>

@@ -10,7 +10,10 @@ import { playNamed, jingle, sparkle } from '../lib/audio'
 import { speak } from '../lib/speech'
 import { tick } from '../lib/haptics'
 import { bouncy } from '../lib/motion'
-import SquishyView, { FILL_BOX, inflation } from '../components/SquishyView'
+import SquishyView, { FILL_BOX, inflation, Accessory, Face } from '../components/SquishyView'
+import OptionCard, { OptionGrid } from '../components/OptionCard'
+import { ACCESSORIES } from '../data/accessories'
+import { useChoose } from './useChoose'
 import { addonPieces } from '../components/FillingMass'
 import AddonArt, { ART_PALETTES } from '../components/AddonArt'
 import { PrimaryButton } from '../components/Buttons'
@@ -301,6 +304,7 @@ export function PlayPanel({ onGoToStep }) {
   const { draft } = state.maker
   const { mode, readAloud, muted } = state.settings
   const { actions } = usePlay()
+  const choose = useChoose()
   const [renaming, setRenaming] = useState(false)
   const name = squishyName(draft)
   const onShelf = state.shelf.find((s) => s.id === draft.savedId)
@@ -358,6 +362,29 @@ export function PlayPanel({ onGoToStep }) {
           <Icon name="pencil" size={22} /> Rename
         </button>
       </div>
+
+      <section aria-labelledby="make-it-a" className="flex flex-col gap-2">
+        <h3 id="make-it-a" className="text-center font-display text-[length:var(--text-title)] font-semibold text-ink">
+          Make it a…
+        </h3>
+        <OptionGrid>
+          {ACCESSORIES.map((a) => (
+            <OptionCard
+              key={a.id}
+              label={a.name}
+              selected={(draft.accessory ?? 'none') === a.id}
+              onClick={() => choose({ accessory: a.id }, a.name, 1.2)}
+            >
+              <svg viewBox="-10 -20 280 280" className="size-full" aria-hidden="true">
+                <circle cx="130" cy="160" r="84" fill="#ffb3d6" />
+                <ellipse cx="96" cy="118" rx="26" ry="11" fill="#fff" opacity="0.7" transform="rotate(-28 96 118)" />
+                <Face face={{ x: 130, y: 168, s: 0.9 }} />
+                <Accessory kind={a.id} at={[130, 76]} />
+              </svg>
+            </OptionCard>
+          ))}
+        </OptionGrid>
+      </section>
 
       <PrimaryButton icon={saved ? 'check' : 'shelf'} onClick={save} className="w-full">
         {saved ? 'On my Shelf!' : 'Save to my Shelf'}

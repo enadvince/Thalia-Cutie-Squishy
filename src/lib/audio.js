@@ -227,3 +227,25 @@ const NAMED = {
   pop: () => pop(1.1),
 }
 export const playNamed = (name, amount) => NAMED[name]?.(amount)
+
+// A round bubbly "gloop" as filling pours in; `level` 0–1 raises it as the squishy fills.
+export function gloop(level = 0) {
+  if (muted) return
+  const ac = audio()
+  const t = ac.currentTime
+  const osc = ac.createOscillator()
+  const filter = ac.createBiquadFilter()
+  const gain = ac.createGain()
+  const base = 160 + level * 160 + Math.random() * 40
+  osc.type = 'sine'
+  osc.frequency.setValueAtTime(base, t)
+  osc.frequency.exponentialRampToValueAtTime(base * 2.6, t + 0.09)
+  filter.type = 'lowpass'
+  filter.frequency.value = 1200
+  gain.gain.setValueAtTime(0.0001, t)
+  gain.gain.exponentialRampToValueAtTime(0.85, t + 0.015)
+  gain.gain.exponentialRampToValueAtTime(0.0001, t + 0.14)
+  osc.connect(filter).connect(gain).connect(master)
+  osc.start(t)
+  osc.stop(t + 0.16)
+}
