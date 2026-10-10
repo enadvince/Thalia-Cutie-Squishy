@@ -43,6 +43,7 @@ npm run verify       # screenshots land in verify-out/
 - `src/state/GameContext.jsx`: React context + autosave to `localStorage`, with Undo history.
 - `GUIDELINES.md`: HIG/M3 checklist, signed off at the end of each phase.
 - `RESEARCH.md`: Mobbin/Watermelon pattern summary.
+- `ASSETS.md`: every art asset, plus the Higgsfield prompts for the generated-art pass.
 
 ## How the squish works (Step 4)
 
@@ -80,4 +81,4 @@ npm run verify       # screenshots land in verify-out/
 5. ✅ Step 4: play physics + sounds
 6. ✅ Shelf, stars, badges, unlocks, daily surprise
 7. ✅ Guardrails, parent gate, PWA/offline, accessibility pass
-8. Higgsfield asset pass + polish
+8. ⏸ Higgsfield asset pass + polish: polish and hand-made SVG art done; Higgsfield images are blocked until the Higgsfield account has a paid plan (prompts are ready in `ASSETS.md`)

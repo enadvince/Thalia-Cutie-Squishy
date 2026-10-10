@@ -157,7 +157,7 @@ async function stepTwo(page, profile) {
   await panel.getByRole('button', { name: 'Sticker Spray' }).click()
   await dialog.waitFor()
   const locked = dialog.getByRole('button', { name: /locked/ })
-  if ((await locked.count()) !== 1) fail(`expected 1 locked sticker, got ${await locked.count()}`)
+  if ((await locked.count()) !== 7) fail(`expected 7 locked stickers, got ${await locked.count()}`)
   await locked.first().dispatchEvent('click') // aria-disabled, but a tap still lands (it wiggles)
   if ((await dialog.locator('[aria-pressed="true"]').count()) !== 1) fail('tapping a locked sticker changed the pick')
   await dialog.getByRole('button', { name: 'Rainbow Cloud' }).click()
